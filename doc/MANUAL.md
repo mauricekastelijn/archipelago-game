@@ -1,6 +1,10 @@
-# Archipelago
+# Archipelago — Player Manual
 
-A grid-based puzzle game where you build bridges between islands to unite colored factions — but rival factions' bridges can't cross!
+---
+
+## Welcome
+
+**Archipelago** is a bridge-building puzzle game set across five island worlds. Connect islands with bridges to unite each faction — but watch out, rival factions' bridges can't cross!
 
 ---
 
@@ -77,7 +81,7 @@ Small grids, one or two factions. Learn the basics here — most bridges can be 
 
 ### 2. Emerald Canopy
 *Mossy islands nestled in a deep forest.*
-Double bridges appear more often, and the numbers get trickier.
+Double bridges appear more often, and the numbers get trickier. Pay close attention to which island has room for one more bridge versus two.
 
 ### 3. Granite Peaks
 *Rocky outcrops jutting from mountain mist.*
@@ -117,17 +121,29 @@ Hints are unlimited. Using a hint counts as one move toward your star rating.
 
 ## Undo & Reset
 
-- **Undo** (↩ button or Ctrl+Z): steps back one move at a time.
+Made a mistake? No problem.
+
+- **Undo** (↩ button or Ctrl+Z): steps back one move at a time. You can undo as far as the beginning.
 - **Redo** (↪ button or Ctrl+Y): steps forward again if you undid too far.
-- **Reset** (🔄 button or R): clears all bridges and starts the puzzle fresh.
+- **Reset** (🔄 button or R): clears all bridges and starts the puzzle fresh. No penalty.
+
+---
+
+## World Map
+
+From the world map, you can pick any unlocked level. Levels are laid out along a winding path — completed levels display your star rating, and the next unsolved level pulses invitingly.
+
+**Unlocking worlds:** Complete at least 12 of 15 levels in a world to unlock the next one. You don't need three stars — just solve them.
 
 ---
 
 ## Settings
 
+Access settings from the menu or the pause screen:
+
 - **Sound effects:** toggle on/off.
 - **Music:** toggle on/off.
-- **Color blind mode:** adds distinct shapes to each faction so colors aren't the only way to tell them apart.
+- **Color blind mode:** adds distinct shapes to each faction (circle, diamond, hexagon, triangle) so colors aren't the only way to tell factions apart.
 
 Settings are saved automatically.
 
@@ -135,51 +151,12 @@ Settings are saved automatically.
 
 ## Tips for Tricky Puzzles
 
-- **Start with forced bridges.** If an island shows "4" and only has two neighbors, both must be double bridges.
-- **Watch the edges.** Islands in corners or along borders have fewer neighbors, making their bridges more constrained.
-- **Think about connectivity.** If two same-color islands would be cut off without a bridge between them, that bridge is guaranteed.
-- **Mind the crossings.** Before building a long bridge, check whether it would block a different faction from connecting.
-- **Use undo freely.** There's no penalty.
+- **Start with forced bridges.** If an island shows "4" and only has two neighbors, both must be double bridges. Look for these easy wins first.
+- **Watch the edges.** Islands in corners or along borders have fewer neighbors, which means their bridges are more constrained.
+- **Think about connectivity.** If two same-color islands would be cut off from the rest of their faction without a bridge between them, that bridge is guaranteed.
+- **Mind the crossings.** Before building a long bridge, check whether it would block a different faction from connecting. Sometimes you need to leave a corridor open.
+- **Use undo freely.** There's no penalty. Try something, see what follows, and undo if it doesn't work out.
 
 ---
 
-## Technical Overview
-
-**Stack:** Phaser 3, TypeScript, Vite
-
-**Platforms:** Desktop and mobile web browsers (touch, mouse, keyboard).
-
-**Quick start:**
-
-```bash
-npm install
-npm run dev       # local dev server
-npm run build     # production build
-npm test          # unit tests
-npm run lint      # ESLint
-```
-
-**Project structure:**
-
-```text
-src/
-  config/      # Constants and game config
-  core/        # Bootstrap and global setup
-  scenes/      # Phaser scenes
-  systems/     # Cross-scene services: settings, save, input, audio
-  model/       # Grid state, solver, undo/redo
-  ui/          # Reusable UI components and views
-  types/       # Shared TypeScript types
-  utils/       # Pure helpers
-  levels/      # Level data (JSON per world)
-```
-
-For the full build specification, see [doc/SPEC.md](doc/SPEC.md).
-For the detailed player manual, see [doc/MANUAL.md](doc/MANUAL.md).
-For template and deployment documentation, see [doc/TEMPLATE.md](doc/TEMPLATE.md).
-
----
-
-## License
-
-See [LICENSE](LICENSE).
+*Good luck, bridge builder. The archipelago awaits.*
