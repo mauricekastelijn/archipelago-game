@@ -20,7 +20,9 @@ export default [
         window: 'readonly',
         document: 'readonly',
         localStorage: 'readonly',
-        console: 'readonly'
+        console: 'readonly',
+        fetch: 'readonly',
+        KeyboardEvent: 'readonly'
       }
     },
     plugins: {

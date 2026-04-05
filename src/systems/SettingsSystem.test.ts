@@ -10,7 +10,9 @@ describe('SettingsSystem', () => {
 
   it('reads sound and music flags from the save state', () => {
     SaveSystem.save({
-      bestScore: 0,
+      currentWorld: 1,
+      currentLevel: 1,
+      levelResults: {},
       soundEnabled: false,
       musicEnabled: true
     });

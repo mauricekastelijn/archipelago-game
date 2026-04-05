@@ -1,193 +1,496 @@
 import Phaser from 'phaser';
 import { APP } from '../config/app';
-import { InputSystem } from '../systems/InputSystem';
+import { FACTION_STYLES } from '../config/factionColors';
+import { Grid } from '../model/Grid';
+import { Island } from '../model/Island';
+import { Bridge } from '../model/Bridge';
+import { MoveHistory } from '../model/MoveHistory';
+import { Solver } from '../model/Solver';
 import { SaveSystem } from '../systems/SaveSystem';
-import { clamp } from '../utils/clamp';
+import type { LevelData } from '../types/level';
 
-const RUN_DURATION_SECONDS = 30;
+const GRID_PADDING = 40;
+const ISLAND_RADIUS_RATIO = 0.35;
+const BRIDGE_OFFSET = 4;
 
 export class PlayScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Arc;
-  private target!: Phaser.GameObjects.Arc;
-  private stars!: Phaser.GameObjects.Group;
-  private inputSystem!: InputSystem;
-  private score = 0;
-  private remainingTime = RUN_DURATION_SECONDS;
-  private readonly velocity = new Phaser.Math.Vector2();
-  private runTimer?: Phaser.Time.TimerEvent;
-  private runFinished = false;
+  private grid!: Grid;
+  private history!: MoveHistory;
+  private levelData!: LevelData;
+  private cellSize = 0;
+  private gridOffsetX = 0;
+  private gridOffsetY = 0;
+
+  private selectedIsland: Island | null = null;
+  private islandGraphics: Map<string, Phaser.GameObjects.Container> = new Map();
+  private bridgeGraphics: Map<string, Phaser.GameObjects.Graphics> = new Map();
+  private neighborHighlights: Phaser.GameObjects.Arc[] = [];
+  private solved = false;
 
   constructor() {
     super('play');
+  }
+
+  init(data: { levelData: LevelData }): void {
+    this.levelData = data.levelData;
   }
 
   create(): void {
     const { width, height } = this.scale;
     this.cameras.main.setBackgroundColor(APP.backgroundColor);
 
-    this.resetRunState();
+    this.grid = Grid.fromLevelData(this.levelData);
+    this.history = new MoveHistory();
+    this.selectedIsland = null;
+    this.solved = false;
+
+    this.islandGraphics.clear();
+    this.bridgeGraphics.clear();
+    this.neighborHighlights = [];
+
+    this.calculateLayout(width, height);
+    this.drawGridBackground();
+    this.createIslandVisuals();
+    this.setupInput();
+
+    this.events.emit('moves-changed', 0);
+    this.events.emit('level-info', {
+      world: this.levelData.world,
+      level: this.levelData.level
+    });
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleShutdown, this);
+  }
 
-    this.inputSystem = new InputSystem(this);
+  private calculateLayout(viewWidth: number, viewHeight: number): void {
+    const topBarHeight = 70;
+    const bottomBarHeight = 100;
+    const availableWidth = viewWidth - GRID_PADDING * 2;
+    const availableHeight = viewHeight - topBarHeight - bottomBarHeight - GRID_PADDING * 2;
 
-    this.add.rectangle(width / 2, height / 2, width - 24, height - 24, 0x111827, 0.7).setStrokeStyle(2, 0x334155);
+    this.cellSize = Math.floor(
+      Math.min(availableWidth / this.grid.width, availableHeight / this.grid.height)
+    );
 
-    for (let i = 0; i < 36; i += 1) {
-      const x = Phaser.Math.Between(20, width - 20);
-      const y = Phaser.Math.Between(20, height - 20);
-      const alpha = Phaser.Math.FloatBetween(0.08, 0.2);
-      this.add.circle(x, y, Phaser.Math.Between(1, 3), 0xffffff, alpha);
+    const gridPixelWidth = this.cellSize * this.grid.width;
+    const gridPixelHeight = this.cellSize * this.grid.height;
+    this.gridOffsetX = Math.floor((viewWidth - gridPixelWidth) / 2);
+    this.gridOffsetY = topBarHeight + Math.floor((availableHeight - gridPixelHeight) / 2) + GRID_PADDING;
+  }
+
+  private cellToPixel(row: number, col: number): { x: number; y: number } {
+    return {
+      x: this.gridOffsetX + col * this.cellSize + this.cellSize / 2,
+      y: this.gridOffsetY + row * this.cellSize + this.cellSize / 2
+    };
+  }
+
+  private drawGridBackground(): void {
+    const gfx = this.add.graphics();
+    gfx.fillStyle(0x111827, 0.5);
+    gfx.fillRoundedRect(
+      this.gridOffsetX - 8,
+      this.gridOffsetY - 8,
+      this.cellSize * this.grid.width + 16,
+      this.cellSize * this.grid.height + 16,
+      8
+    );
+
+    gfx.lineStyle(1, 0x1e293b, 0.3);
+    for (let r = 0; r <= this.grid.height; r++) {
+      const y = this.gridOffsetY + r * this.cellSize;
+      gfx.lineBetween(
+        this.gridOffsetX, y,
+        this.gridOffsetX + this.grid.width * this.cellSize, y
+      );
     }
-
-    this.player = this.add.circle(width / 2, height / 2, 18, 0x6ee7b7);
-    this.player.setStrokeStyle(3, 0xffffff, 0.9);
-
-    this.target = this.add.circle(width / 2, 140, 12, 0xf59e0b);
-    this.target.setStrokeStyle(2, 0xffffff, 0.9);
-
-    this.stars = this.add.group();
-    for (let i = 0; i < 8; i += 1) {
-      this.spawnStar();
+    for (let c = 0; c <= this.grid.width; c++) {
+      const x = this.gridOffsetX + c * this.cellSize;
+      gfx.lineBetween(
+        x, this.gridOffsetY,
+        x, this.gridOffsetY + this.grid.height * this.cellSize
+      );
     }
+  }
 
-    this.runTimer = this.time.addEvent({
-      delay: 1000,
-      loop: true,
-      callback: () => {
-        if (this.runFinished) {
-          return;
-        }
+  private createIslandVisuals(): void {
+    const radius = this.cellSize * ISLAND_RADIUS_RATIO;
+    const fontSize = Math.max(16, Math.round(radius * 1.1));
 
-        this.remainingTime = Math.max(0, this.remainingTime - 1);
-        this.events.emit('time-changed', this.remainingTime);
+    for (const island of this.grid.islands) {
+      const { x, y } = this.cellToPixel(island.row, island.col);
+      const style = FACTION_STYLES[island.faction] ?? FACTION_STYLES[0];
 
-        if (this.remainingTime === 0) {
-          this.finishRun();
-        }
+      const circle = this.add.circle(0, 0, radius, style.color);
+      circle.setStrokeStyle(2, 0xffffff, 0.8);
+
+      const text = this.add.text(0, 0, `${island.degree}`, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: `${fontSize}px`,
+        color: '#ffffff',
+        fontStyle: 'bold'
+      }).setOrigin(0.5);
+
+      const container = this.add.container(x, y, [circle, text]);
+      container.setSize(radius * 2, radius * 2);
+      container.setDepth(10);
+
+      this.islandGraphics.set(island.key, container);
+    }
+  }
+
+  private findIslandNearPointer(px: number, py: number): Island | null {
+    const radius = this.cellSize * ISLAND_RADIUS_RATIO;
+    for (const island of this.grid.islands) {
+      const pos = this.cellToPixel(island.row, island.col);
+      const dx = px - pos.x;
+      const dy = py - pos.y;
+      if (dx * dx + dy * dy <= radius * radius) {
+        return island;
+      }
+    }
+    return null;
+  }
+
+  private setupInput(): void {
+    // All pointer input handled at scene level via coordinate lookup
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const island = this.findIslandNearPointer(pointer.worldX, pointer.worldY);
+      if (island) {
+        this.onIslandTapped(island);
+      } else {
+        this.deselectIsland();
       }
     });
 
-    this.events.emit('score-changed', this.score);
-    this.events.emit('time-changed', this.remainingTime);
+    // Keyboard
+    if (this.input.keyboard) {
+      this.input.keyboard.on('keydown-Z', (event: KeyboardEvent) => {
+        if (event.ctrlKey || event.metaKey || !event.ctrlKey) {
+          this.undoMove();
+        }
+      });
+      this.input.keyboard.on('keydown-Y', () => this.redoMove());
+      this.input.keyboard.on('keydown-R', () => this.resetLevel());
+      this.input.keyboard.on('keydown-H', () => this.useHint());
+      this.input.keyboard.on('keydown-ESC', () => this.deselectIsland());
+    }
   }
 
-  update(_time: number, delta: number): void {
-    if (this.runFinished) {
+  private onIslandTapped(island: Island): void {
+    if (this.solved) return;
+
+    if (this.selectedIsland === null) {
+      this.selectIsland(island);
       return;
     }
 
-    const dt = delta / 1000;
-    const { width, height } = this.scale;
-    const input = this.inputSystem.snapshot();
-
-    let ax = 0;
-    let ay = 0;
-    const accel = 560;
-    const friction = 0.95;
-    const maxSpeed = 360;
-
-    if (input.left) ax -= accel;
-    if (input.right) ax += accel;
-    if (input.up) ay -= accel;
-    if (input.down) ay += accel;
-
-    if (input.primary) {
-      const pointer = this.input.activePointer;
-      const dx = pointer.worldX - this.player.x;
-      const dy = pointer.worldY - this.player.y;
-      const len = Math.hypot(dx, dy) || 1;
-      ax += (dx / len) * accel * 0.7;
-      ay += (dy / len) * accel * 0.7;
-
-      const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, this.target.x, this.target.y);
-      this.velocity.x += Math.cos(angle) * 16;
-      this.velocity.y += Math.sin(angle) * 16;
+    if (this.selectedIsland === island) {
+      this.deselectIsland();
+      return;
     }
 
-    this.velocity.x += ax * dt;
-    this.velocity.y += ay * dt;
-    this.velocity.scale(friction);
-    this.velocity.setLength(Math.min(this.velocity.length(), maxSpeed));
-
-    this.player.x = clamp(this.player.x + this.velocity.x * dt, 18, width - 18);
-    this.player.y = clamp(this.player.y + this.velocity.y * dt, 18, height - 18);
-
-    const wobble = Math.sin(this.time.now / 150) * 1.5;
-    this.player.setScale(1 + Math.abs(wobble) * 0.03);
-
-    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, this.target.x, this.target.y) < 34) {
-      this.score += 10;
-      this.events.emit('score-changed', this.score);
-      this.repositionTarget();
-      this.cameras.main.shake(80, 0.002);
+    // Check if tapped island is an eligible neighbor
+    const neighbors = this.grid.getNeighbors(this.selectedIsland);
+    if (neighbors.includes(island)) {
+      this.cycleBridgeBetween(this.selectedIsland, island);
+      this.deselectIsland();
+      return;
     }
 
-    const children = this.stars.getChildren() as Phaser.GameObjects.Arc[];
-    for (const star of children) {
-      if (Phaser.Math.Distance.Between(this.player.x, this.player.y, star.x, star.y) < 26) {
-        this.score += 3;
-        this.events.emit('score-changed', this.score);
-        star.destroy();
-        this.spawnStar();
+    // Not a neighbor — select the new island instead
+    this.deselectIsland();
+    this.selectIsland(island);
+  }
+
+  private selectIsland(island: Island): void {
+    this.selectedIsland = island;
+
+    // Glow effect on selected island
+    const container = this.islandGraphics.get(island.key);
+    if (container) {
+      this.tweens.add({
+        targets: container,
+        scaleX: 1.1,
+        scaleY: 1.1,
+        duration: 200,
+        ease: 'Back.Out'
+      });
+    }
+
+    // Highlight neighbors
+    const neighbors = this.grid.getNeighbors(island);
+    for (const neighbor of neighbors) {
+      const { x, y } = this.cellToPixel(neighbor.row, neighbor.col);
+      const highlight = this.add.circle(x, y, this.cellSize * ISLAND_RADIUS_RATIO + 6, 0xffffff, 0.15);
+      highlight.setDepth(5);
+      this.neighborHighlights.push(highlight);
+    }
+  }
+
+  private deselectIsland(): void {
+    if (this.selectedIsland) {
+      const container = this.islandGraphics.get(this.selectedIsland.key);
+      if (container) {
+        this.tweens.add({
+          targets: container,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 150,
+          ease: 'Cubic.Out'
+        });
+      }
+    }
+    this.selectedIsland = null;
+    for (const h of this.neighborHighlights) {
+      h.destroy();
+    }
+    this.neighborHighlights = [];
+  }
+
+  private cycleBridgeBetween(islandA: Island, islandB: Island): void {
+    const key = Bridge.makeKey(islandA.row, islandA.col, islandB.row, islandB.col);
+    const previousCount = this.grid.getBridgeCount(islandA, islandB);
+    const nextCount = (previousCount + 1) % 3;
+
+    // Check crossing only when adding bridges
+    if (nextCount > 0 && previousCount === 0 && this.grid.wouldCross(islandA, islandB)) {
+      this.flashIsland(islandA);
+      return;
+    }
+
+    this.grid.cycleBridge(islandA, islandB);
+    this.history.push({ bridgeKey: key, previousCount, newCount: nextCount });
+
+    this.drawBridge(key);
+    this.updateIslandVisuals(islandA);
+    this.updateIslandVisuals(islandB);
+
+    this.events.emit('moves-changed', this.history.moveCount);
+
+    if (this.grid.isSolved()) {
+      this.onLevelSolved();
+    }
+  }
+
+  undoMove(): void {
+    if (this.solved) return;
+    const move = this.history.undo();
+    if (!move) return;
+
+    this.grid.setBridgeCount(move.bridgeKey, move.previousCount);
+    this.drawBridge(move.bridgeKey);
+
+    const bridge = this.grid.bridges.get(move.bridgeKey);
+    if (bridge) {
+      this.updateIslandVisuals(bridge.islandA);
+      this.updateIslandVisuals(bridge.islandB);
+    }
+    this.events.emit('moves-changed', this.history.moveCount);
+  }
+
+  redoMove(): void {
+    if (this.solved) return;
+    const move = this.history.redo();
+    if (!move) return;
+
+    this.grid.setBridgeCount(move.bridgeKey, move.newCount);
+    this.drawBridge(move.bridgeKey);
+
+    const bridge = this.grid.bridges.get(move.bridgeKey);
+    if (bridge) {
+      this.updateIslandVisuals(bridge.islandA);
+      this.updateIslandVisuals(bridge.islandB);
+    }
+    this.events.emit('moves-changed', this.history.moveCount);
+  }
+
+  resetLevel(): void {
+    this.grid.reset();
+    this.history.clear();
+    this.solved = false;
+    this.deselectIsland();
+
+    for (const [, gfx] of this.bridgeGraphics) {
+      gfx.destroy();
+    }
+    this.bridgeGraphics.clear();
+
+    for (const island of this.grid.islands) {
+      this.updateIslandVisuals(island);
+    }
+    this.events.emit('moves-changed', 0);
+  }
+
+  useHint(): void {
+    if (this.solved) return;
+    const hint = Solver.findForcedMove(this.grid);
+    if (!hint) return;
+
+    const key = Bridge.makeKey(
+      hint.islandA.row, hint.islandA.col,
+      hint.islandB.row, hint.islandB.col
+    );
+    const previousCount = this.grid.getBridgeCount(hint.islandA, hint.islandB);
+    if (previousCount >= hint.targetCount) return;
+
+    // Cycle to target
+    while (this.grid.getBridgeCount(hint.islandA, hint.islandB) < hint.targetCount) {
+      this.grid.cycleBridge(hint.islandA, hint.islandB);
+    }
+    this.history.push({ bridgeKey: key, previousCount, newCount: hint.targetCount });
+
+    this.drawBridge(key);
+    this.updateIslandVisuals(hint.islandA);
+    this.updateIslandVisuals(hint.islandB);
+
+    // Pulse hint bridge
+    const gfx = this.bridgeGraphics.get(key);
+    if (gfx) {
+      this.tweens.add({
+        targets: gfx,
+        alpha: { from: 0.4, to: 1 },
+        duration: 300,
+        yoyo: true,
+        repeat: 2
+      });
+    }
+
+    this.events.emit('moves-changed', this.history.moveCount);
+
+    if (this.grid.isSolved()) {
+      this.onLevelSolved();
+    }
+  }
+
+  private drawBridge(bridgeKey: string): void {
+    let gfx = this.bridgeGraphics.get(bridgeKey);
+    if (gfx) {
+      gfx.clear();
+    } else {
+      gfx = this.add.graphics();
+      gfx.setDepth(2);
+      this.bridgeGraphics.set(bridgeKey, gfx);
+    }
+
+    const bridge = this.grid.bridges.get(bridgeKey);
+    if (!bridge || bridge.count === 0) return;
+
+    const posA = this.cellToPixel(bridge.islandA.row, bridge.islandA.col);
+    const posB = this.cellToPixel(bridge.islandB.row, bridge.islandB.col);
+    const style = FACTION_STYLES[bridge.faction] ?? FACTION_STYLES[0];
+
+    const lineWidth = Math.max(2, Math.round(this.cellSize * 0.06));
+
+    if (bridge.count === 1) {
+      gfx.lineStyle(lineWidth, style.color, 0.9);
+      gfx.lineBetween(posA.x, posA.y, posB.x, posB.y);
+    } else if (bridge.count === 2) {
+      const offset = BRIDGE_OFFSET;
+      if (bridge.isHorizontal) {
+        gfx.lineStyle(lineWidth, style.color, 0.9);
+        gfx.lineBetween(posA.x, posA.y - offset, posB.x, posB.y - offset);
+        gfx.lineBetween(posA.x, posA.y + offset, posB.x, posB.y + offset);
+      } else {
+        gfx.lineStyle(lineWidth, style.color, 0.9);
+        gfx.lineBetween(posA.x - offset, posA.y, posB.x - offset, posB.y);
+        gfx.lineBetween(posA.x + offset, posA.y, posB.x + offset, posB.y);
       }
     }
   }
 
-  private resetRunState(): void {
-    this.runTimer?.remove(false);
-    this.runFinished = false;
-    this.score = 0;
-    this.remainingTime = RUN_DURATION_SECONDS;
-    this.velocity.set(0, 0);
+  private updateIslandVisuals(island: Island): void {
+    const container = this.islandGraphics.get(island.key);
+    if (!container) return;
+
+    const text = container.getAt(1) as Phaser.GameObjects.Text;
+    const circle = container.getAt(0) as Phaser.GameObjects.Arc;
+    const degreeUsed = this.grid.getDegreeUsed(island);
+    const style = FACTION_STYLES[island.faction] ?? FACTION_STYLES[0];
+
+    if (degreeUsed === island.degree) {
+      text.setColor('#4ade80');
+      circle.setFillStyle(style.color, 0.7);
+    } else if (degreeUsed > island.degree) {
+      text.setColor('#f87171');
+      circle.setFillStyle(style.color);
+    } else {
+      text.setColor('#ffffff');
+      circle.setFillStyle(style.color);
+    }
+  }
+
+  private flashIsland(island: Island): void {
+    const container = this.islandGraphics.get(island.key);
+    if (!container) return;
+    this.tweens.add({
+      targets: container,
+      angle: { from: -3, to: 3 },
+      duration: 75,
+      yoyo: true,
+      repeat: 2,
+      onComplete: () => container.setAngle(0)
+    });
+  }
+
+  private onLevelSolved(): void {
+    this.solved = true;
+    this.deselectIsland();
+
+    const moves = this.history.moveCount;
+    const par = this.levelData.parMoves;
+    let stars = 1;
+    if (moves <= par) stars = 3;
+    else if (moves <= par * 1.5) stars = 2;
+
+    // Save result
+    const key = `${this.levelData.world}-${this.levelData.level}`;
+    const save = SaveSystem.load();
+    const existing = save.levelResults[key];
+    if (!existing || stars > existing.stars || moves < existing.bestMoveCount) {
+      save.levelResults[key] = {
+        completed: true,
+        stars: Math.max(stars, existing?.stars ?? 0),
+        bestMoveCount: Math.min(moves, existing?.bestMoveCount ?? Infinity)
+      };
+      SaveSystem.save(save);
+    }
+
+    this.events.emit('level-complete', { stars, moves, par });
+
+    // Celebration: pulse all bridges
+    let delay = 0;
+    for (const [, gfx] of this.bridgeGraphics) {
+      this.tweens.add({
+        targets: gfx,
+        alpha: { from: 0.5, to: 1 },
+        duration: 200,
+        delay,
+        yoyo: true
+      });
+      delay += 100;
+    }
+
+    // Bounce all islands
+    for (const island of this.grid.islands) {
+      const container = this.islandGraphics.get(island.key);
+      if (container) {
+        this.tweens.add({
+          targets: container,
+          scaleX: 1.08,
+          scaleY: 1.08,
+          duration: 300,
+          delay: delay + 200,
+          yoyo: true,
+          ease: 'Bounce.Out'
+        });
+      }
+    }
   }
 
   private handleShutdown(): void {
-    this.runFinished = true;
-    this.runTimer?.remove(false);
-    this.runTimer = undefined;
-  }
-
-  private spawnStar(): void {
-    const { width, height } = this.scale;
-    const star = this.add.circle(
-      Phaser.Math.Between(24, width - 24),
-      Phaser.Math.Between(120, height - 24),
-      6,
-      0x93c5fd
-    );
-    star.setStrokeStyle(2, 0xffffff, 0.8);
-    this.tweens.add({
-      targets: star,
-      alpha: { from: 0.5, to: 1 },
-      duration: Phaser.Math.Between(500, 1200),
-      yoyo: true,
-      repeat: -1
-    });
-    this.stars.add(star);
-  }
-
-  private repositionTarget(): void {
-    const { width, height } = this.scale;
-    this.target.setPosition(
-      Phaser.Math.Between(36, width - 36),
-      Phaser.Math.Between(120, height - 36)
-    );
-  }
-
-  private finishRun(): void {
-    if (this.runFinished) {
-      return;
-    }
-
-    this.runFinished = true;
-    this.runTimer?.remove(false);
-
-    const save = SaveSystem.load();
-    if (this.score > save.bestScore) {
-      SaveSystem.update({ bestScore: this.score });
-    }
-
-    this.scene.stop('ui');
-    this.scene.start('menu');
+    this.islandGraphics.clear();
+    this.bridgeGraphics.clear();
+    this.neighborHighlights = [];
   }
 }

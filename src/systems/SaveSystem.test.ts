@@ -10,7 +10,9 @@ describe('SaveSystem', () => {
 
   it('returns default data when no save exists', () => {
     expect(SaveSystem.load()).toEqual({
-      bestScore: 0,
+      currentWorld: 1,
+      currentLevel: 1,
+      levelResults: {},
       soundEnabled: true,
       musicEnabled: true
     });
@@ -20,7 +22,9 @@ describe('SaveSystem', () => {
     localStorage.setItem(APP.saveKey, '{not-valid-json');
 
     expect(SaveSystem.load()).toEqual({
-      bestScore: 0,
+      currentWorld: 1,
+      currentLevel: 1,
+      levelResults: {},
       soundEnabled: true,
       musicEnabled: true
     });
@@ -28,15 +32,19 @@ describe('SaveSystem', () => {
 
   it('merges updates with the existing save state', () => {
     SaveSystem.save({
-      bestScore: 10,
+      currentWorld: 1,
+      currentLevel: 3,
+      levelResults: {},
       soundEnabled: true,
       musicEnabled: true
     });
 
-    const next = SaveSystem.update({ bestScore: 25, soundEnabled: false });
+    const next = SaveSystem.update({ currentLevel: 5, soundEnabled: false });
 
     expect(next).toEqual({
-      bestScore: 25,
+      currentWorld: 1,
+      currentLevel: 5,
+      levelResults: {},
       soundEnabled: false,
       musicEnabled: true
     });
