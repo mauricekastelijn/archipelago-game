@@ -27,6 +27,15 @@ export class PlayScene extends Phaser.Scene {
   private neighborHighlights: Phaser.GameObjects.Arc[] = [];
   private solved = false;
 
+  // Drag-to-connect state
+  private dragStartIsland: Island | null = null;
+  private dragLine: Phaser.GameObjects.Graphics | null = null;
+
+  // Long-press-to-remove state
+  private longPressTimer: Phaser.Time.TimerEvent | null = null;
+  private longPressBridgeKey: string | null = null;
+  private static readonly LONG_PRESS_MS = 400;
+
   constructor() {
     super('play');
   }
@@ -153,14 +162,75 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private setupInput(): void {
-    // All pointer input handled at scene level via coordinate lookup
+    // Pointer down: start drag on island, or start long-press on bridge
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (this.solved) return;
+
       const island = this.findIslandNearPointer(pointer.worldX, pointer.worldY);
       if (island) {
-        this.onIslandTapped(island);
-      } else {
-        this.deselectIsland();
+        this.dragStartIsland = island;
+        this.cancelLongPress();
+        return;
       }
+
+      // Not an island — check for a bridge under the pointer for long-press removal
+      this.deselectIsland();
+      const bridgeKey = this.findBridgeNearPointer(pointer.worldX, pointer.worldY);
+      if (bridgeKey) {
+        this.longPressBridgeKey = bridgeKey;
+        this.longPressTimer = this.time.delayedCall(PlayScene.LONG_PRESS_MS, () => {
+          this.removeBridge(bridgeKey);
+          this.longPressBridgeKey = null;
+        });
+      }
+    });
+
+    // Pointer move: draw drag line, cancel long-press if pointer drifts
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (this.dragStartIsland && pointer.isDown) {
+        this.drawDragLine(this.dragStartIsland, pointer.worldX, pointer.worldY);
+      }
+
+      // Cancel long-press if pointer moves more than a small threshold
+      if (this.longPressBridgeKey && pointer.isDown) {
+        const dist = Phaser.Math.Distance.Between(
+          pointer.downX, pointer.downY, pointer.worldX, pointer.worldY
+        );
+        if (dist > 10) {
+          this.cancelLongPress();
+        }
+      }
+    });
+
+    // Pointer up: finish drag or handle tap
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      this.cancelLongPress();
+      this.clearDragLine();
+
+      if (this.solved) {
+        this.dragStartIsland = null;
+        return;
+      }
+
+      const endIsland = this.findIslandNearPointer(pointer.worldX, pointer.worldY);
+
+      // Drag from island A to island B — cycle bridge
+      if (this.dragStartIsland && endIsland && this.dragStartIsland !== endIsland) {
+        const neighbors = this.grid.getNeighbors(this.dragStartIsland);
+        if (neighbors.includes(endIsland)) {
+          this.cycleBridgeBetween(this.dragStartIsland, endIsland);
+        }
+        this.deselectIsland();
+        this.dragStartIsland = null;
+        return;
+      }
+
+      // Tap (no drag) — use existing tap-to-select logic
+      if (this.dragStartIsland && endIsland === this.dragStartIsland) {
+        this.onIslandTapped(this.dragStartIsland);
+      }
+
+      this.dragStartIsland = null;
     });
 
     // Keyboard
@@ -174,6 +244,87 @@ export class PlayScene extends Phaser.Scene {
       this.input.keyboard.on('keydown-R', () => this.resetLevel());
       this.input.keyboard.on('keydown-H', () => this.useHint());
       this.input.keyboard.on('keydown-ESC', () => this.deselectIsland());
+    }
+  }
+
+  /** Find the closest bridge within tap distance of a point. */
+  private findBridgeNearPointer(px: number, py: number): string | null {
+    const threshold = Math.max(12, this.cellSize * 0.15);
+    let bestKey: string | null = null;
+    let bestDist = threshold;
+
+    for (const [key, bridge] of this.grid.bridges) {
+      if (bridge.count === 0) continue;
+
+      const posA = this.cellToPixel(bridge.islandA.row, bridge.islandA.col);
+      const posB = this.cellToPixel(bridge.islandB.row, bridge.islandB.col);
+      const dist = this.pointToSegmentDist(px, py, posA.x, posA.y, posB.x, posB.y);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestKey = key;
+      }
+    }
+    return bestKey;
+  }
+
+  /** Distance from point (px,py) to line segment (ax,ay)-(bx,by). */
+  private pointToSegmentDist(
+    px: number, py: number,
+    ax: number, ay: number,
+    bx: number, by: number
+  ): number {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Phaser.Math.Distance.Between(px, py, ax, ay);
+
+    let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+    t = Phaser.Math.Clamp(t, 0, 1);
+    return Phaser.Math.Distance.Between(px, py, ax + t * dx, ay + t * dy);
+  }
+
+  /** Remove a bridge entirely (long-press action). */
+  private removeBridge(bridgeKey: string): void {
+    const bridge = this.grid.bridges.get(bridgeKey);
+    if (!bridge || bridge.count === 0) return;
+
+    const previousCount = bridge.count;
+    this.grid.setBridgeCount(bridgeKey, 0);
+    this.history.push({ bridgeKey, previousCount, newCount: 0 });
+
+    this.drawBridge(bridgeKey);
+    this.updateIslandVisuals(bridge.islandA);
+    this.updateIslandVisuals(bridge.islandB);
+    this.events.emit('moves-changed', this.history.moveCount);
+
+    // Visual feedback: flash the islands
+    this.flashIsland(bridge.islandA);
+    this.flashIsland(bridge.islandB);
+  }
+
+  private cancelLongPress(): void {
+    if (this.longPressTimer) {
+      this.longPressTimer.destroy();
+      this.longPressTimer = null;
+    }
+    this.longPressBridgeKey = null;
+  }
+
+  private drawDragLine(from: Island, toX: number, toY: number): void {
+    if (!this.dragLine) {
+      this.dragLine = this.add.graphics();
+      this.dragLine.setDepth(15);
+    }
+    this.dragLine.clear();
+    const pos = this.cellToPixel(from.row, from.col);
+    this.dragLine.lineStyle(2, 0xffffff, 0.4);
+    this.dragLine.lineBetween(pos.x, pos.y, toX, toY);
+  }
+
+  private clearDragLine(): void {
+    if (this.dragLine) {
+      this.dragLine.destroy();
+      this.dragLine = null;
     }
   }
 
@@ -489,6 +640,8 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private handleShutdown(): void {
+    this.cancelLongPress();
+    this.clearDragLine();
     this.islandGraphics.clear();
     this.bridgeGraphics.clear();
     this.neighborHighlights = [];

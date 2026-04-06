@@ -444,7 +444,7 @@ No backtracking needed for hints — forced-move detection is sufficient and run
 - Basic HUD
 
 ### Phase 2 — Content & polish
-- All 75 levels
+- 25 levels - 5 in each world
 - World map scene
 - Star rating
 - Hint system
@@ -459,6 +459,7 @@ No backtracking needed for hints — forced-move detection is sufficient and run
 - Tutorial overlays
 
 ### Phase 4 — QA & ship
+- All 75 levels
 - Mobile touch testing
 - Performance profiling
 - Accessibility review (color blind, touch targets)
