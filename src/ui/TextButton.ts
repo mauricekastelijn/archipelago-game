@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { isPointWithinButtonBounds } from './buttonLogic';
+import { AudioSystem } from '../systems/AudioSystem';
 
 export class TextButton extends Phaser.GameObjects.Container {
   constructor(
@@ -95,6 +96,7 @@ export class TextButton extends Phaser.GameObjects.Container {
 
       if (isPointerWithinButton(pointer)) {
         syncHoverState(pointer);
+        AudioSystem.buttonClick();
         onClick();
       } else {
         syncHoverState(pointer);

@@ -7,6 +7,7 @@ import { Bridge } from '../model/Bridge';
 import { MoveHistory } from '../model/MoveHistory';
 import { Solver } from '../model/Solver';
 import { SaveSystem } from '../systems/SaveSystem';
+import { AudioSystem } from '../systems/AudioSystem';
 import type { LevelData } from '../types/level';
 
 const GRID_PADDING = 40;
@@ -47,6 +48,9 @@ export class PlayScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
     this.cameras.main.setBackgroundColor(APP.backgroundColor);
+
+    AudioSystem.unlock();
+    AudioSystem.startMusic();
 
     this.grid = Grid.fromLevelData(this.levelData);
     this.history = new MoveHistory();
@@ -291,6 +295,7 @@ export class PlayScene extends Phaser.Scene {
     const previousCount = bridge.count;
     this.grid.setBridgeCount(bridgeKey, 0);
     this.history.push({ bridgeKey, previousCount, newCount: 0 });
+    AudioSystem.bridgeRemove();
 
     this.drawBridge(bridgeKey);
     this.updateIslandVisuals(bridge.islandA);
@@ -356,6 +361,7 @@ export class PlayScene extends Phaser.Scene {
 
   private selectIsland(island: Island): void {
     this.selectedIsland = island;
+    AudioSystem.selectIsland();
 
     // Glow effect on selected island
     const container = this.islandGraphics.get(island.key);
@@ -407,11 +413,16 @@ export class PlayScene extends Phaser.Scene {
     // Check crossing only when adding bridges
     if (nextCount > 0 && previousCount === 0 && this.grid.wouldCross(islandA, islandB)) {
       this.flashIsland(islandA);
+      AudioSystem.error();
       return;
     }
 
     this.grid.cycleBridge(islandA, islandB);
     this.history.push({ bridgeKey: key, previousCount, newCount: nextCount });
+
+    if (nextCount === 0) AudioSystem.bridgeRemove();
+    else if (nextCount === 2) AudioSystem.bridgeDouble();
+    else AudioSystem.bridgePlace();
 
     this.drawBridge(key);
     this.updateIslandVisuals(islandA);
@@ -428,6 +439,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.solved) return;
     const move = this.history.undo();
     if (!move) return;
+    AudioSystem.undo();
 
     this.grid.setBridgeCount(move.bridgeKey, move.previousCount);
     this.drawBridge(move.bridgeKey);
@@ -477,6 +489,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.solved) return;
     const hint = Solver.findForcedMove(this.grid);
     if (!hint) return;
+    AudioSystem.hint();
 
     const key = Bridge.makeKey(
       hint.islandA.row, hint.islandA.col,
@@ -607,6 +620,7 @@ export class PlayScene extends Phaser.Scene {
       SaveSystem.save(save);
     }
 
+    AudioSystem.victory();
     this.events.emit('level-complete', { stars, moves, par });
 
     // Celebration: pulse all bridges
@@ -640,6 +654,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private handleShutdown(): void {
+    AudioSystem.stopMusic();
     this.cancelLongPress();
     this.clearDragLine();
     this.islandGraphics.clear();

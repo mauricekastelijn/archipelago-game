@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { APP } from '../config/app';
 import { TextButton } from '../ui/TextButton';
 import { SettingsSystem } from '../systems/SettingsSystem';
+import { AudioSystem } from '../systems/AudioSystem';
 
 export class SettingsScene extends Phaser.Scene {
   constructor() {
@@ -38,6 +39,7 @@ export class SettingsScene extends Phaser.Scene {
     const musicLabel = (): string => `Music: ${SettingsSystem.isMusicEnabled() ? 'On' : 'Off'}`;
     const musicButton = new TextButton(this, width / 2, 184, toggleWidth, 48, musicLabel(), () => {
       SettingsSystem.toggleMusic();
+      AudioSystem.updateMusicState();
       (musicButton.getAt(1) as Phaser.GameObjects.Text).setText(musicLabel());
     });
   }
