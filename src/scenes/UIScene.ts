@@ -22,7 +22,7 @@ export class UIScene extends Phaser.Scene {
       this, 36, 28, 48, 40, '←', () => {
         this.scene.stop('play');
         this.scene.stop('ui');
-        this.scene.start('menu');
+        this.scene.start('worldmap');
       }
     );
     backButton.setDepth(20);
@@ -144,7 +144,7 @@ export class UIScene extends Phaser.Scene {
       this, cx, cy + 75, 160, 48, 'Continue', () => {
         this.scene.stop('play');
         this.scene.stop('ui');
-        this.scene.start('menu');
+        this.scene.start('worldmap');
       }
     );
     nextButton.setDepth(100).setAlpha(0);
