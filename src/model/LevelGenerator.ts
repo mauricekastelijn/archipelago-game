@@ -1,4 +1,5 @@
 import type { LevelData, IslandData } from '../types/level';
+import type { Difficulty } from '../types/save';
 
 /* ------------------------------------------------------------------ */
 /*  Seeded PRNG (mulberry32)                                          */
@@ -260,7 +261,6 @@ function computeForcedRatio(levelData: LevelData): number {
     for (const other of pairs) {
       const oc = bridgeCounts.get(other.key) ?? 0;
       if (oc === 0) continue;
-      if (other.a.faction === pair.a.faction) continue;
       const otherCells = bridgeCells(other.a, other.b);
       if (bridgesOverlap(cells, otherCells)) return true;
     }
@@ -494,8 +494,7 @@ function tryGenerate(params: GeneratorParams, rng: () => number): LevelData | nu
       // Check crossing with existing bridges of different factions
       let crosses = false;
       for (const cell of edge.cells) {
-        const cellFaction = usedBridgeCells.get(posKey(cell.row, cell.col));
-        if (cellFaction !== undefined && cellFaction !== f) {
+        if (usedBridgeCells.has(posKey(cell.row, cell.col))) {
           crosses = true;
           break;
         }
@@ -538,8 +537,7 @@ function tryGenerate(params: GeneratorParams, rng: () => number): LevelData | nu
 
     let crosses = false;
     for (const cell of edge.cells) {
-      const cellFaction = usedBridgeCells.get(posKey(cell.row, cell.col));
-      if (cellFaction !== undefined && cellFaction !== edge.a.faction) {
+      if (usedBridgeCells.has(posKey(cell.row, cell.col))) {
         crosses = true;
         break;
       }
@@ -823,4 +821,107 @@ export function generateWorld(preset: WorldPreset): LevelData[] {
     levels.push(level);
   }
   return levels;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Quick Play generator                                              */
+/* ------------------------------------------------------------------ */
+
+interface QuickPlayPreset {
+  gridWidth: number;
+  gridHeight: number;
+  minIslands: number;
+  maxIslands: number;
+  minDegree: number;
+  allowDoubleBridges: boolean;
+  doubleBridgeChance: number;
+  extraBridgeChance: number;
+  maxForcedRatio: number;
+}
+
+const QUICK_PLAY_PRESETS: Record<Difficulty, QuickPlayPreset> = {
+  easy: {
+    gridWidth: 5, gridHeight: 6,
+    minIslands: 4, maxIslands: 6, minDegree: 1,
+    allowDoubleBridges: false, doubleBridgeChance: 0,
+    extraBridgeChance: 0.15, maxForcedRatio: 1.0
+  },
+  medium: {
+    gridWidth: 7, gridHeight: 7,
+    minIslands: 8, maxIslands: 12, minDegree: 1,
+    allowDoubleBridges: true, doubleBridgeChance: 0.3,
+    extraBridgeChance: 0.4, maxForcedRatio: 0.65
+  },
+  hard: {
+    gridWidth: 8, gridHeight: 8,
+    minIslands: 14, maxIslands: 18, minDegree: 1,
+    allowDoubleBridges: true, doubleBridgeChance: 0.45,
+    extraBridgeChance: 0.55, maxForcedRatio: 0.35
+  },
+  expert: {
+    gridWidth: 9, gridHeight: 9,
+    minIslands: 18, maxIslands: 24, minDegree: 1,
+    allowDoubleBridges: true, doubleBridgeChance: 0.5,
+    extraBridgeChance: 0.6, maxForcedRatio: 0.25
+  }
+};
+
+/**
+ * Generate a single quick-play level on the fly.
+ * Uses Date.now() as the seed for variety.
+ */
+export function generateQuickPlay(difficulty: Difficulty, numFactions: number): LevelData {
+  const preset = QUICK_PLAY_PRESETS[difficulty];
+  const minCrossings = numFactions > 1 && (difficulty === 'hard' || difficulty === 'expert') ? 1 : 0;
+
+  // Try with multiple seeds until we get a valid level
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const seed = (Date.now() + attempt * 7919) & 0x7fffffff;
+    const level = generateLevel({
+      seed,
+      world: 0,
+      level: 0,
+      gridWidth: preset.gridWidth,
+      gridHeight: preset.gridHeight,
+      numFactions,
+      minIslands: preset.minIslands,
+      maxIslands: preset.maxIslands,
+      minDegree: preset.minDegree,
+      allowDoubleBridges: preset.allowDoubleBridges,
+      doubleBridgeChance: preset.doubleBridgeChance,
+      extraBridgeChance: preset.extraBridgeChance,
+      maxForcedRatio: preset.maxForcedRatio,
+      minCrossings,
+      maxAttempts: 400
+    });
+    if (level) {
+      level.id = `qp-${seed}`;
+      return level;
+    }
+  }
+
+  // Fallback: relax constraints
+  const seed = Date.now() & 0x7fffffff;
+  const level = generateLevel({
+    seed,
+    world: 0,
+    level: 0,
+    gridWidth: preset.gridWidth,
+    gridHeight: preset.gridHeight,
+    numFactions,
+    minIslands: preset.minIslands,
+    maxIslands: preset.maxIslands,
+    minDegree: preset.minDegree,
+    allowDoubleBridges: preset.allowDoubleBridges,
+    doubleBridgeChance: preset.doubleBridgeChance,
+    extraBridgeChance: preset.extraBridgeChance,
+    maxForcedRatio: 1.0,
+    minCrossings: 0,
+    maxAttempts: 1000
+  });
+  if (level) {
+    level.id = `qp-${seed}`;
+    return level;
+  }
+  throw new Error('Failed to generate quick play level');
 }

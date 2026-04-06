@@ -7,31 +7,43 @@
     "gridHeight": 5,
     "islands": [
       {
-        "row": 0,
-        "col": 0,
-        "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 0,
-        "col": 4,
-        "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 4,
-        "col": 0,
+        "row": 2,
+        "col": 3,
         "faction": 0,
         "degree": 2
       },
       {
         "row": 4,
-        "col": 4,
+        "col": 3,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 4,
+        "col": 0,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 2,
+        "col": 1,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 1,
         "faction": 0,
         "degree": 2
       }
     ],
-    "parMoves": 3
+    "parMoves": 5
   },
   {
     "id": "1-2",
@@ -41,19 +53,25 @@
     "gridHeight": 5,
     "islands": [
       {
-        "row": 0,
+        "row": 3,
+        "col": 4,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 1,
+        "col": 4,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 1,
         "col": 0,
         "faction": 0,
         "degree": 2
       },
       {
-        "row": 0,
-        "col": 4,
-        "faction": 0,
-        "degree": 2
-      },
-      {
-        "row": 2,
+        "row": 3,
         "col": 2,
         "faction": 0,
         "degree": 2
@@ -65,105 +83,123 @@
         "degree": 2
       },
       {
-        "row": 4,
+        "row": 1,
         "col": 2,
-        "faction": 0,
-        "degree": 4
-      },
-      {
-        "row": 4,
-        "col": 4,
-        "faction": 0,
-        "degree": 2
-      }
-    ],
-    "parMoves": 7
-  },
-  {
-    "id": "1-3",
-    "world": 1,
-    "level": 3,
-    "gridWidth": 5,
-    "gridHeight": 5,
-    "islands": [
-      {
-        "row": 0,
-        "col": 0,
-        "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 0,
-        "col": 3,
-        "faction": 1,
-        "degree": 1
-      },
-      {
-        "row": 2,
-        "col": 0,
-        "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 2,
-        "col": 3,
-        "faction": 1,
-        "degree": 2
-      },
-      {
-        "row": 4,
-        "col": 3,
-        "faction": 1,
-        "degree": 1
-      }
-    ],
-    "parMoves": 3
-  },
-  {
-    "id": "1-4",
-    "world": 1,
-    "level": 4,
-    "gridWidth": 5,
-    "gridHeight": 5,
-    "islands": [
-      {
-        "row": 0,
-        "col": 0,
-        "faction": 0,
-        "degree": 3
-      },
-      {
-        "row": 0,
-        "col": 2,
-        "faction": 0,
-        "degree": 2
-      },
-      {
-        "row": 0,
-        "col": 4,
-        "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 4,
-        "col": 0,
         "faction": 0,
         "degree": 3
       },
       {
         "row": 4,
-        "col": 2,
-        "faction": 0,
-        "degree": 2
-      },
-      {
-        "row": 4,
-        "col": 4,
+        "col": 3,
         "faction": 0,
         "degree": 1
       }
     ],
     "parMoves": 6
+  },
+  {
+    "id": "1-3",
+    "world": 1,
+    "level": 3,
+    "gridWidth": 6,
+    "gridHeight": 6,
+    "islands": [
+      {
+        "row": 0,
+        "col": 4,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 5,
+        "col": 4,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 5,
+        "col": 0,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 2,
+        "col": 4,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 0,
+        "faction": 0,
+        "degree": 2
+      }
+    ],
+    "parMoves": 5
+  },
+  {
+    "id": "1-4",
+    "world": 1,
+    "level": 4,
+    "gridWidth": 6,
+    "gridHeight": 6,
+    "islands": [
+      {
+        "row": 1,
+        "col": 5,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 1,
+        "col": 1,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 3,
+        "col": 1,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 5,
+        "col": 1,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 3,
+        "col": 5,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 5,
+        "col": 5,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 5,
+        "col": 3,
+        "faction": 0,
+        "degree": 3
+      },
+      {
+        "row": 2,
+        "col": 3,
+        "faction": 0,
+        "degree": 1
+      }
+    ],
+    "parMoves": 7
   },
   {
     "id": "1-5",
@@ -173,52 +209,46 @@
     "gridHeight": 6,
     "islands": [
       {
-        "row": 0,
-        "col": 0,
-        "faction": 0,
-        "degree": 2
-      },
-      {
-        "row": 0,
-        "col": 2,
-        "faction": 0,
-        "degree": 2
-      },
-      {
-        "row": 2,
+        "row": 4,
         "col": 3,
-        "faction": 1,
-        "degree": 2
-      },
-      {
-        "row": 2,
-        "col": 5,
-        "faction": 1,
-        "degree": 1
+        "faction": 0,
+        "degree": 3
       },
       {
         "row": 4,
         "col": 0,
         "faction": 0,
-        "degree": 1
+        "degree": 2
       },
       {
-        "row": 4,
-        "col": 2,
+        "row": 0,
+        "col": 3,
         "faction": 0,
         "degree": 1
       },
       {
-        "row": 5,
+        "row": 2,
+        "col": 0,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 2,
         "col": 3,
-        "faction": 1,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 4,
+        "col": 5,
+        "faction": 0,
         "degree": 2
       },
       {
-        "row": 5,
+        "row": 0,
         "col": 5,
-        "faction": 1,
-        "degree": 1
+        "faction": 0,
+        "degree": 2
       }
     ],
     "parMoves": 6

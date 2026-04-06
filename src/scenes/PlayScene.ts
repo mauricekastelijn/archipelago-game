@@ -38,12 +38,17 @@ export class PlayScene extends Phaser.Scene {
   private longPressBridgeKey: string | null = null;
   private static readonly LONG_PRESS_MS = 400;
 
+  private returnScene = 'worldmap';
+  private quickPlayLabel = '';
+
   constructor() {
     super('play');
   }
 
-  init(data: { levelData: LevelData }): void {
+  init(data: { levelData: LevelData; returnScene?: string; quickPlayLabel?: string }): void {
     this.levelData = data.levelData;
+    this.returnScene = data.returnScene ?? 'worldmap';
+    this.quickPlayLabel = data.quickPlayLabel ?? '';
   }
 
   create(): void {
@@ -70,7 +75,9 @@ export class PlayScene extends Phaser.Scene {
     this.events.emit('moves-changed', 0);
     this.events.emit('level-info', {
       world: this.levelData.world,
-      level: this.levelData.level
+      level: this.levelData.level,
+      returnScene: this.returnScene,
+      quickPlayLabel: this.quickPlayLabel
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.handleShutdown, this);
@@ -707,21 +714,26 @@ export class PlayScene extends Phaser.Scene {
     if (moves <= par) stars = 3;
     else if (moves <= par * 1.5) stars = 2;
 
-    // Save result
-    const key = `${this.levelData.world}-${this.levelData.level}`;
-    const save = SaveSystem.load();
-    const existing = save.levelResults[key];
-    if (!existing || stars > existing.stars || moves < existing.bestMoveCount) {
-      save.levelResults[key] = {
-        completed: true,
-        stars: Math.max(stars, existing?.stars ?? 0),
-        bestMoveCount: Math.min(moves, existing?.bestMoveCount ?? Infinity)
-      };
-      SaveSystem.save(save);
+    // Save result (skip for quick play)
+    if (this.returnScene === 'worldmap') {
+      const key = `${this.levelData.world}-${this.levelData.level}`;
+      const save = SaveSystem.load();
+      const existing = save.levelResults[key];
+      if (!existing || stars > existing.stars || moves < existing.bestMoveCount) {
+        save.levelResults[key] = {
+          completed: true,
+          stars: Math.max(stars, existing?.stars ?? 0),
+          bestMoveCount: Math.min(moves, existing?.bestMoveCount ?? Infinity)
+        };
+        SaveSystem.save(save);
+      }
     }
 
     AudioSystem.victory();
-    this.events.emit('level-complete', { stars, moves, par });
+    this.events.emit('level-complete', {
+      stars, moves, par,
+      returnScene: this.returnScene
+    });
 
     // Celebration: pulse all bridges
     let delay = 0;

@@ -6,9 +6,14 @@ export class UIScene extends Phaser.Scene {
   private movesText!: Phaser.GameObjects.Text;
   private overlayElements: Phaser.GameObjects.GameObject[] = [];
   private readonly horizontalMargin = 16;
+  private returnScene = 'worldmap';
 
   constructor() {
     super('ui');
+  }
+
+  init(data?: { returnScene?: string }): void {
+    this.returnScene = data?.returnScene ?? 'worldmap';
   }
 
   create(): void {
@@ -22,7 +27,7 @@ export class UIScene extends Phaser.Scene {
       this, 36, 36, 48, 40, '←', () => {
         this.scene.stop('play');
         this.scene.stop('ui');
-        this.scene.start('worldmap');
+        this.scene.start(this.returnScene);
       }
     );
     backButton.setDepth(20);
@@ -102,14 +107,21 @@ export class UIScene extends Phaser.Scene {
     this.movesText.setText(`Moves: ${moves}`);
   }
 
-  private onLevelInfo(info: { world: number; level: number }): void {
-    this.levelText.setText(`World ${info.world} — Level ${info.level}`);
+  private onLevelInfo(info: { world: number; level: number; returnScene?: string; quickPlayLabel?: string }): void {
+    if (info.returnScene) this.returnScene = info.returnScene;
+    if (info.quickPlayLabel) {
+      this.levelText.setText(info.quickPlayLabel);
+    } else {
+      this.levelText.setText(`World ${info.world} — Level ${info.level}`);
+    }
   }
 
-  private onLevelComplete(data: { stars: number; moves: number; par: number }): void {
+  private onLevelComplete(data: { stars: number; moves: number; par: number; returnScene?: string }): void {
     const { width } = this.scale;
     const cx = width / 2;
     const cy = this.scale.height / 2;
+    const goTo = data.returnScene ?? this.returnScene;
+    const isQuickPlay = goTo === 'quickplay';
 
     // Destroy any previous overlay elements
     for (const el of this.overlayElements) {
@@ -141,10 +153,10 @@ export class UIScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(100).setAlpha(0);
 
     const nextButton = new TextButton(
-      this, cx, cy + 75, 160, 48, 'Continue', () => {
+      this, cx, cy + 75, 160, 48, isQuickPlay ? 'New Puzzle' : 'Continue', () => {
         this.scene.stop('play');
         this.scene.stop('ui');
-        this.scene.start('worldmap');
+        this.scene.start(goTo);
       }
     );
     nextButton.setDepth(100).setAlpha(0);

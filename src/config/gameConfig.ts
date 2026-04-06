@@ -3,6 +3,7 @@ import { APP } from './app';
 import { BootScene } from '../scenes/BootScene';
 import { MenuScene } from '../scenes/MenuScene';
 import { WorldMapScene } from '../scenes/WorldMapScene';
+import { QuickPlayScene } from '../scenes/QuickPlayScene';
 import { PlayScene } from '../scenes/PlayScene';
 import { UIScene } from '../scenes/UIScene';
 import { SettingsScene } from '../scenes/SettingsScene';
@@ -18,7 +19,7 @@ export function createGameConfig(parent: string): Phaser.Types.Core.GameConfig {
       width: APP.designWidth,
       height: APP.designHeight
     },
-    scene: [BootScene, MenuScene, WorldMapScene, PlayScene, UIScene, SettingsScene],
+    scene: [BootScene, MenuScene, WorldMapScene, QuickPlayScene, PlayScene, UIScene, SettingsScene],
     render: {
       antialias: true,
       pixelArt: false,

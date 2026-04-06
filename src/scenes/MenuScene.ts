@@ -37,13 +37,18 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Play button
-    new TextButton(this, width / 2, height * 0.6, 200, 56, 'Play', () => {
+    // Play button (Worlds)
+    new TextButton(this, width / 2, height * 0.55, 200, 56, 'Worlds', () => {
       this.scene.start('worldmap');
     });
 
+    // Quick Play button
+    new TextButton(this, width / 2, height * 0.55 + 68, 200, 56, 'Quick Play', () => {
+      this.scene.start('quickplay');
+    });
+
     // Settings button
-    new TextButton(this, width / 2, height * 0.6 + 72, 200, 48, '⚙ Settings', () => {
+    new TextButton(this, width / 2, height * 0.55 + 68 + 68, 200, 48, '⚙ Settings', () => {
       this.scene.start('settings');
     });
   }

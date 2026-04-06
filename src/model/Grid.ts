@@ -106,14 +106,16 @@ export class Grid {
     return this.getDegreeUsed(island) === island.degree;
   }
 
-  /** Check if a bridge would cross any existing bridge of a different faction. */
+  /** Check if a bridge would cross any existing bridge. */
   wouldCross(islandA: Island, islandB: Island): boolean {
     const testBridge = new Bridge(islandA, islandB);
     const testCells = testBridge.occupiedCells();
 
     for (const bridge of this.bridges.values()) {
       if (bridge.count === 0) continue;
-      if (bridge.faction === islandA.faction) continue;
+      // Skip the bridge between the same two islands (don't compare against itself)
+      if ((bridge.islandA === islandA && bridge.islandB === islandB) ||
+          (bridge.islandA === islandB && bridge.islandB === islandA)) continue;
 
       const existingCells = bridge.occupiedCells();
       for (const tc of testCells) {

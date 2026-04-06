@@ -14,7 +14,9 @@ describe('SettingsSystem', () => {
       currentLevel: 1,
       levelResults: {},
       soundEnabled: false,
-      musicEnabled: true
+      musicEnabled: true,
+      quickPlayDifficulty: 'medium',
+      quickPlayFactions: 1
     });
 
     expect(SettingsSystem.isSoundEnabled()).toBe(false);

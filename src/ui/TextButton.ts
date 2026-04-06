@@ -3,6 +3,9 @@ import { isPointWithinButtonBounds } from './buttonLogic';
 import { AudioSystem } from '../systems/AudioSystem';
 
 export class TextButton extends Phaser.GameObjects.Container {
+  private label: Phaser.GameObjects.Text;
+  private enabled = true;
+
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -30,6 +33,7 @@ export class TextButton extends Phaser.GameObjects.Container {
       })
       .setOrigin(0.5);
 
+    this.label = text;
     this.add([bg, text]);
     this.setSize(width, height);
 
@@ -73,6 +77,7 @@ export class TextButton extends Phaser.GameObjects.Container {
     };
 
     const handlePointerDown = (pointer: Phaser.Input.Pointer): void => {
+      if (!this.enabled) return;
       if (isPressed) {
         return;
       }
@@ -114,5 +119,13 @@ export class TextButton extends Phaser.GameObjects.Container {
 
     scene.add.existing(this);
     syncHoverState(scene.input.activePointer);
+  }
+
+  setText(text: string): void {
+    this.label.setText(text);
+  }
+
+  setEnabled(value: boolean): void {
+    this.enabled = value;
   }
 }

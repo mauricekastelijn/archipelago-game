@@ -10,9 +10,6 @@ import { generateWorld, WORLD_PRESETS } from '../src/model/LevelGenerator';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 for (const preset of WORLD_PRESETS) {
-  // Skip world 1 — hand-crafted levels already exist
-  if (preset.world === 1) continue;
-
   const levels = generateWorld(preset);
   const outPath = resolve(__dirname, `../public/levels/world-${preset.world}.json`);
   writeFileSync(outPath, JSON.stringify(levels, null, 2) + '\n');
