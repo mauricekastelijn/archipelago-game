@@ -1,0 +1,436 @@
+[
+  {
+    "id": "5-1",
+    "world": 5,
+    "level": 1,
+    "gridWidth": 8,
+    "gridHeight": 8,
+    "islands": [
+      {
+        "row": 3,
+        "col": 2,
+        "faction": 0,
+        "degree": 4
+      },
+      {
+        "row": 0,
+        "col": 0,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 1,
+        "col": 2,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 3,
+        "col": 0,
+        "faction": 0,
+        "degree": 3
+      },
+      {
+        "row": 0,
+        "col": 7,
+        "faction": 1,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 4,
+        "faction": 1,
+        "degree": 2
+      },
+      {
+        "row": 3,
+        "col": 4,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 2,
+        "col": 7,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 7,
+        "col": 4,
+        "faction": 2,
+        "degree": 2
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "faction": 2,
+        "degree": 3
+      },
+      {
+        "row": 5,
+        "col": 7,
+        "faction": 2,
+        "degree": 2
+      },
+      {
+        "row": 7,
+        "col": 2,
+        "faction": 2,
+        "degree": 4
+      },
+      {
+        "row": 7,
+        "col": 0,
+        "faction": 2,
+        "degree": 1
+      }
+    ],
+    "parMoves": 14
+  },
+  {
+    "id": "5-2",
+    "world": 5,
+    "level": 2,
+    "gridWidth": 8,
+    "gridHeight": 8,
+    "islands": [
+      {
+        "row": 0,
+        "col": 2,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 2,
+        "col": 0,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 2,
+        "col": 2,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 3,
+        "col": 4,
+        "faction": 1,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 4,
+        "faction": 1,
+        "degree": 3
+      },
+      {
+        "row": 0,
+        "col": 7,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 5,
+        "col": 4,
+        "faction": 2,
+        "degree": 3
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "faction": 2,
+        "degree": 1
+      },
+      {
+        "row": 5,
+        "col": 7,
+        "faction": 2,
+        "degree": 1
+      },
+      {
+        "row": 7,
+        "col": 2,
+        "faction": 2,
+        "degree": 2
+      },
+      {
+        "row": 7,
+        "col": 4,
+        "faction": 2,
+        "degree": 3
+      }
+    ],
+    "parMoves": 10
+  },
+  {
+    "id": "5-3",
+    "world": 5,
+    "level": 3,
+    "gridWidth": 9,
+    "gridHeight": 9,
+    "islands": [
+      {
+        "row": 0,
+        "col": 3,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 2,
+        "col": 3,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 0,
+        "col": 0,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 3,
+        "col": 7,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 0,
+        "col": 5,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 3,
+        "col": 5,
+        "faction": 1,
+        "degree": 2
+      },
+      {
+        "row": 5,
+        "col": 2,
+        "faction": 2,
+        "degree": 1
+      },
+      {
+        "row": 8,
+        "col": 2,
+        "faction": 2,
+        "degree": 3
+      },
+      {
+        "row": 5,
+        "col": 4,
+        "faction": 2,
+        "degree": 1
+      },
+      {
+        "row": 8,
+        "col": 4,
+        "faction": 2,
+        "degree": 3
+      },
+      {
+        "row": 7,
+        "col": 6,
+        "faction": 3,
+        "degree": 1
+      },
+      {
+        "row": 7,
+        "col": 8,
+        "faction": 3,
+        "degree": 3
+      },
+      {
+        "row": 5,
+        "col": 8,
+        "faction": 3,
+        "degree": 2
+      }
+    ],
+    "parMoves": 11
+  },
+  {
+    "id": "5-4",
+    "world": 5,
+    "level": 4,
+    "gridWidth": 9,
+    "gridHeight": 9,
+    "islands": [
+      {
+        "row": 0,
+        "col": 1,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 3,
+        "col": 3,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 3,
+        "col": 1,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 5,
+        "faction": 1,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 8,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 2,
+        "col": 5,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 7,
+        "col": 2,
+        "faction": 2,
+        "degree": 3
+      },
+      {
+        "row": 7,
+        "col": 0,
+        "faction": 2,
+        "degree": 2
+      },
+      {
+        "row": 4,
+        "col": 2,
+        "faction": 2,
+        "degree": 1
+      },
+      {
+        "row": 4,
+        "col": 7,
+        "faction": 3,
+        "degree": 3
+      },
+      {
+        "row": 8,
+        "col": 7,
+        "faction": 3,
+        "degree": 3
+      },
+      {
+        "row": 4,
+        "col": 5,
+        "faction": 3,
+        "degree": 1
+      },
+      {
+        "row": 6,
+        "col": 7,
+        "faction": 3,
+        "degree": 3
+      },
+      {
+        "row": 8,
+        "col": 3,
+        "faction": 3,
+        "degree": 2
+      }
+    ],
+    "parMoves": 13
+  },
+  {
+    "id": "5-5",
+    "world": 5,
+    "level": 5,
+    "gridWidth": 9,
+    "gridHeight": 9,
+    "islands": [
+      {
+        "row": 3,
+        "col": 3,
+        "faction": 0,
+        "degree": 4
+      },
+      {
+        "row": 3,
+        "col": 0,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "faction": 0,
+        "degree": 3
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 3,
+        "col": 5,
+        "faction": 1,
+        "degree": 2
+      },
+      {
+        "row": 1,
+        "col": 7,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 1,
+        "col": 5,
+        "faction": 1,
+        "degree": 3
+      },
+      {
+        "row": 7,
+        "col": 4,
+        "faction": 2,
+        "degree": 2
+      },
+      {
+        "row": 5,
+        "col": 4,
+        "faction": 2,
+        "degree": 1
+      },
+      {
+        "row": 7,
+        "col": 2,
+        "faction": 2,
+        "degree": 1
+      },
+      {
+        "row": 6,
+        "col": 8,
+        "faction": 3,
+        "degree": 1
+      },
+      {
+        "row": 8,
+        "col": 8,
+        "faction": 3,
+        "degree": 2
+      },
+      {
+        "row": 8,
+        "col": 5,
+        "faction": 3,
+        "degree": 1
+      }
+    ],
+    "parMoves": 12
+  }
+]
