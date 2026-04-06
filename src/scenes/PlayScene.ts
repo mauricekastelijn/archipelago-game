@@ -77,8 +77,8 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private calculateLayout(viewWidth: number, viewHeight: number): void {
-    const topBarHeight = 70;
-    const bottomBarHeight = 100;
+    const topBarHeight = 80;
+    const bottomBarHeight = 110;
     const availableWidth = viewWidth - GRID_PADDING * 2;
     const availableHeight = viewHeight - topBarHeight - bottomBarHeight - GRID_PADDING * 2;
 
@@ -654,25 +654,33 @@ export class PlayScene extends Phaser.Scene {
         yoyo: true,
         onComplete: () => { container.setScale(1); }
       });
-
-      // Golden glare overlay
-      const { x, y } = this.cellToPixel(island.row, island.col);
-      const radius = this.cellSize * ISLAND_RADIUS_RATIO;
-      const glare = this.add.circle(x, y, radius + 4, 0xfbbf24, 0.6);
-      glare.setDepth(9);
-      this.tweens.add({
-        targets: glare,
-        alpha: 0,
-        scaleX: 1.8,
-        scaleY: 1.8,
-        duration: 500,
-        delay: delay + 100,
-        ease: 'Cubic.Out',
-        onComplete: () => { glare.destroy(); }
-      });
-
       delay += 60;
     }
+
+    // Golden sweep: a bright bar sweeps left-to-right across the faction's bounding box
+    const positions = factionIslands.map(i => this.cellToPixel(i.row, i.col));
+    const minX = Math.min(...positions.map(p => p.x));
+    const maxX = Math.max(...positions.map(p => p.x));
+    const minY = Math.min(...positions.map(p => p.y));
+    const maxY = Math.max(...positions.map(p => p.y));
+    const pad = this.cellSize * 0.6;
+    const sweepHeight = maxY - minY + pad * 2;
+    const sweepWidth = this.cellSize * 0.8;
+
+    const sweep = this.add.rectangle(
+      minX - pad - sweepWidth / 2, minY - pad + sweepHeight / 2,
+      sweepWidth, sweepHeight,
+      0xfbbf24, 0.5
+    ).setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
+
+    this.tweens.add({
+      targets: sweep,
+      x: maxX + pad + sweepWidth / 2,
+      alpha: { from: 0.55, to: 0 },
+      duration: 600,
+      ease: 'Cubic.InOut',
+      onComplete: () => { sweep.destroy(); }
+    });
   }
 
   private onLevelSolved(): void {

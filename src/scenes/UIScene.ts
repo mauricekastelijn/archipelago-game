@@ -19,7 +19,7 @@ export class UIScene extends Phaser.Scene {
 
     // Top bar: back button + level title
     const backButton = new TextButton(
-      this, 36, 28, 48, 40, '←', () => {
+      this, 36, 36, 48, 40, '←', () => {
         this.scene.stop('play');
         this.scene.stop('ui');
         this.scene.start('worldmap');
@@ -28,7 +28,7 @@ export class UIScene extends Phaser.Scene {
     backButton.setDepth(20);
 
     this.levelText = this.add
-      .text(width / 2, 28, '', {
+      .text(width / 2, 36, '', {
         fontFamily: 'Arial, sans-serif',
         fontSize,
         color: '#f8fafc'
@@ -37,7 +37,7 @@ export class UIScene extends Phaser.Scene {
       .setDepth(20);
 
     // Bottom bar: moves + action buttons
-    const bottomY = this.scale.height - 40;
+    const bottomY = this.scale.height - 52;
 
     this.movesText = this.add
       .text(this.horizontalMargin, bottomY, 'Moves: 0', {
