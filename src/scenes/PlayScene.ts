@@ -438,6 +438,8 @@ export class PlayScene extends Phaser.Scene {
     // Check faction completion
     if (nextCount > 0) {
       this.checkFactionComplete(islandA.faction);
+    } else {
+      this.uncheckFactionComplete(islandA.faction);
     }
 
     this.events.emit('moves-changed', this.history.moveCount);
@@ -460,6 +462,7 @@ export class PlayScene extends Phaser.Scene {
     if (bridge) {
       this.updateIslandVisuals(bridge.islandA);
       this.updateIslandVisuals(bridge.islandB);
+      this.uncheckFactionComplete(bridge.islandA.faction);
     }
     this.events.emit('moves-changed', this.history.moveCount);
   }
@@ -476,6 +479,7 @@ export class PlayScene extends Phaser.Scene {
     if (bridge) {
       this.updateIslandVisuals(bridge.islandA);
       this.updateIslandVisuals(bridge.islandB);
+      this.checkFactionComplete(bridge.islandA.faction);
     }
     this.events.emit('moves-changed', this.history.moveCount);
   }
@@ -532,6 +536,8 @@ export class PlayScene extends Phaser.Scene {
         repeat: 2
       });
     }
+
+    this.checkFactionComplete(hint.islandA.faction);
 
     this.events.emit('moves-changed', this.history.moveCount);
 
@@ -624,6 +630,15 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  private uncheckFactionComplete(faction: number): void {
+    if (!this.completedFactions.has(faction)) return;
+    const factionIslands = this.grid.islands.filter(i => i.faction === faction);
+    const allSatisfied = factionIslands.every(i => this.grid.isIslandSatisfied(i));
+    if (!allSatisfied || !this.grid.isFactionConnected(faction)) {
+      this.completedFactions.delete(faction);
+    }
+  }
+
   private checkFactionComplete(faction: number): void {
     if (this.completedFactions.has(faction)) return;
 
@@ -639,10 +654,19 @@ export class PlayScene extends Phaser.Scene {
     AudioSystem.factionComplete();
 
     // Pop-out all faction islands with staggered timing
+    // Sort by x position for left-to-right sweep
+    const sorted = [...factionIslands].sort((a, b) => a.col - b.col || a.row - b.row);
     let delay = 0;
-    for (const island of factionIslands) {
+    for (const island of sorted) {
       const container = this.islandGraphics.get(island.key);
       if (!container) continue;
+      const circle = container.getAt(0) as Phaser.GameObjects.Arc;
+      const origColor = (FACTION_STYLES[island.faction] ?? FACTION_STYLES[0]).color;
+
+      // Flash golden then revert
+      this.time.delayedCall(delay, () => {
+        circle.setFillStyle(0xfbbf24, 1);
+      });
 
       this.tweens.add({
         targets: container,
@@ -652,35 +676,25 @@ export class PlayScene extends Phaser.Scene {
         delay,
         ease: 'Back.Out',
         yoyo: true,
-        onComplete: () => { container.setScale(1); }
+        onComplete: () => {
+          container.setScale(1);
+          // Fade back to faction color after golden flash
+          this.tweens.add({
+            targets: circle,
+            fillColor: origColor,
+            duration: 400,
+            onUpdate: (tween) => {
+              const t = tween.progress;
+              const r = Math.round(0xfb + t * (((origColor >> 16) & 0xff) - 0xfb));
+              const g = Math.round(0xbf + t * (((origColor >> 8) & 0xff) - 0xbf));
+              const b = Math.round(0x24 + t * ((origColor & 0xff) - 0x24));
+              circle.setFillStyle((r << 16) | (g << 8) | b, 0.7);
+            }
+          });
+        }
       });
-      delay += 60;
+      delay += 80;
     }
-
-    // Golden sweep: a bright bar sweeps left-to-right across the faction's bounding box
-    const positions = factionIslands.map(i => this.cellToPixel(i.row, i.col));
-    const minX = Math.min(...positions.map(p => p.x));
-    const maxX = Math.max(...positions.map(p => p.x));
-    const minY = Math.min(...positions.map(p => p.y));
-    const maxY = Math.max(...positions.map(p => p.y));
-    const pad = this.cellSize * 0.6;
-    const sweepHeight = maxY - minY + pad * 2;
-    const sweepWidth = this.cellSize * 0.8;
-
-    const sweep = this.add.rectangle(
-      minX - pad - sweepWidth / 2, minY - pad + sweepHeight / 2,
-      sweepWidth, sweepHeight,
-      0xfbbf24, 0.5
-    ).setDepth(9).setBlendMode(Phaser.BlendModes.ADD);
-
-    this.tweens.add({
-      targets: sweep,
-      x: maxX + pad + sweepWidth / 2,
-      alpha: { from: 0.55, to: 0 },
-      duration: 600,
-      ease: 'Cubic.InOut',
-      onComplete: () => { sweep.destroy(); }
-    });
   }
 
   private onLevelSolved(): void {
