@@ -206,6 +206,14 @@ export class AudioSystem {
     });
   }
 
+  static factionComplete(): void {
+    if (!SettingsSystem.isSoundEnabled()) return;
+    playTone(659, 0.15, 'sine', 0.12);
+    playTone(784, 0.15, 'sine', 0.1, 0.1);
+    playTone(988, 0.2, 'sine', 0.12, 0.2);
+    playTone(988, 0.3, 'triangle', 0.06, 0.2);
+  }
+
   static buttonClick(): void {
     if (!SettingsSystem.isSoundEnabled()) return;
     playTone(440, 0.04, 'sine', 0.06);

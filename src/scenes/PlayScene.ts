@@ -11,7 +11,7 @@ import { AudioSystem } from '../systems/AudioSystem';
 import type { LevelData } from '../types/level';
 
 const GRID_PADDING = 40;
-const ISLAND_RADIUS_RATIO = 0.35;
+const ISLAND_RADIUS_RATIO = 0.42;
 const BRIDGE_OFFSET = 4;
 
 export class PlayScene extends Phaser.Scene {
@@ -27,6 +27,7 @@ export class PlayScene extends Phaser.Scene {
   private bridgeGraphics: Map<string, Phaser.GameObjects.Graphics> = new Map();
   private neighborHighlights: Phaser.GameObjects.Arc[] = [];
   private solved = false;
+  private completedFactions: Set<number> = new Set();
 
   // Drag-to-connect state
   private dragStartIsland: Island | null = null;
@@ -428,6 +429,17 @@ export class PlayScene extends Phaser.Scene {
     this.updateIslandVisuals(islandA);
     this.updateIslandVisuals(islandB);
 
+    // Pop-out animation on connected islands
+    if (nextCount > 0) {
+      this.popIsland(islandA);
+      this.popIsland(islandB);
+    }
+
+    // Check faction completion
+    if (nextCount > 0) {
+      this.checkFactionComplete(islandA.faction);
+    }
+
     this.events.emit('moves-changed', this.history.moveCount);
 
     if (this.grid.isSolved()) {
@@ -472,6 +484,7 @@ export class PlayScene extends Phaser.Scene {
     this.grid.reset();
     this.history.clear();
     this.solved = false;
+    this.completedFactions.clear();
     this.deselectIsland();
 
     for (const [, gfx] of this.bridgeGraphics) {
@@ -584,6 +597,20 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private popIsland(island: Island): void {
+    const container = this.islandGraphics.get(island.key);
+    if (!container) return;
+    this.tweens.add({
+      targets: container,
+      scaleX: 1.25,
+      scaleY: 1.25,
+      duration: 120,
+      ease: 'Back.Out',
+      yoyo: true,
+      onComplete: () => { container.setScale(1); }
+    });
+  }
+
   private flashIsland(island: Island): void {
     const container = this.islandGraphics.get(island.key);
     if (!container) return;
@@ -595,6 +622,57 @@ export class PlayScene extends Phaser.Scene {
       repeat: 2,
       onComplete: () => container.setAngle(0)
     });
+  }
+
+  private checkFactionComplete(faction: number): void {
+    if (this.completedFactions.has(faction)) return;
+
+    // Check if all islands in the faction are satisfied
+    const factionIslands = this.grid.islands.filter(i => i.faction === faction);
+    const allSatisfied = factionIslands.every(i => this.grid.isIslandSatisfied(i));
+    if (!allSatisfied) return;
+
+    // Check if the faction is connected
+    if (!this.grid.isFactionConnected(faction)) return;
+
+    this.completedFactions.add(faction);
+    AudioSystem.factionComplete();
+
+    // Pop-out all faction islands with staggered timing
+    let delay = 0;
+    for (const island of factionIslands) {
+      const container = this.islandGraphics.get(island.key);
+      if (!container) continue;
+
+      this.tweens.add({
+        targets: container,
+        scaleX: 1.35,
+        scaleY: 1.35,
+        duration: 180,
+        delay,
+        ease: 'Back.Out',
+        yoyo: true,
+        onComplete: () => { container.setScale(1); }
+      });
+
+      // Golden glare overlay
+      const { x, y } = this.cellToPixel(island.row, island.col);
+      const radius = this.cellSize * ISLAND_RADIUS_RATIO;
+      const glare = this.add.circle(x, y, radius + 4, 0xfbbf24, 0.6);
+      glare.setDepth(9);
+      this.tweens.add({
+        targets: glare,
+        alpha: 0,
+        scaleX: 1.8,
+        scaleY: 1.8,
+        duration: 500,
+        delay: delay + 100,
+        ease: 'Cubic.Out',
+        onComplete: () => { glare.destroy(); }
+      });
+
+      delay += 60;
+    }
   }
 
   private onLevelSolved(): void {
