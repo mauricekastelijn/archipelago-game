@@ -22,7 +22,12 @@ export default [
         localStorage: 'readonly',
         console: 'readonly',
         fetch: 'readonly',
-        KeyboardEvent: 'readonly'
+        KeyboardEvent: 'readonly',
+        AudioContext: 'readonly',
+        OscillatorType: 'readonly',
+        OscillatorNode: 'readonly',
+        GainNode: 'readonly',
+        clearInterval: 'readonly'
       }
     },
     plugins: {
