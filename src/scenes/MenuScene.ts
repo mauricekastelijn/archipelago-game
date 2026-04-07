@@ -51,5 +51,10 @@ export class MenuScene extends Phaser.Scene {
     new TextButton(this, width / 2, height * 0.55 + 68 + 68, 200, 48, '⚙ Settings', () => {
       this.scene.start('settings');
     });
+
+    // Tutorial button
+    new TextButton(this, width / 2, height * 0.55 + 68 + 68 + 56, 200, 48, '📖 How to Play', () => {
+      this.scene.start('tutorial');
+    });
   }
 }
