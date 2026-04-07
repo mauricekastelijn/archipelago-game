@@ -186,7 +186,7 @@ describe('World generation - all presets', () => {
       it(`generates ${preset.levels} levels`, () => {
         levels = generateWorld(preset);
         expect(levels).toHaveLength(preset.levels);
-      });
+      }, 60_000);
 
       it('all levels have even degree totals per faction', () => {
         if (!levels) return;

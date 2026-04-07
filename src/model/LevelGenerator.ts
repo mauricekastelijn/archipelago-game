@@ -1,5 +1,6 @@
 import type { LevelData, IslandData } from '../types/level';
 import type { Difficulty } from '../types/save';
+import { Solver } from './Solver';
 
 /* ------------------------------------------------------------------ */
 /*  Seeded PRNG (mulberry32)                                          */
@@ -616,6 +617,9 @@ function tryGenerate(params: GeneratorParams, rng: () => number): LevelData | nu
     const ratio = computeForcedRatio(candidate);
     if (ratio > params.maxForcedRatio) return null;
   }
+
+  // 9. Unique solution check
+  if (!Solver.hasUniqueSolution(candidate)) return null;
 
   return candidate;
 }

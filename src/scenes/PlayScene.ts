@@ -6,6 +6,7 @@ import { Island } from '../model/Island';
 import { Bridge } from '../model/Bridge';
 import { MoveHistory } from '../model/MoveHistory';
 import { Solver } from '../model/Solver';
+import type { Solution } from '../model/Solver';
 import { SaveSystem } from '../systems/SaveSystem';
 import { AudioSystem } from '../systems/AudioSystem';
 import type { LevelData } from '../types/level';
@@ -28,6 +29,7 @@ export class PlayScene extends Phaser.Scene {
   private neighborHighlights: Phaser.GameObjects.Arc[] = [];
   private solved = false;
   private completedFactions: Set<number> = new Set();
+  private solution: Solution | null = null;
 
   // Drag-to-connect state
   private dragStartIsland: Island | null = null;
@@ -60,6 +62,10 @@ export class PlayScene extends Phaser.Scene {
     this.history = new MoveHistory();
     this.selectedIsland = null;
     this.solved = false;
+
+    // Compute the known solution for accurate hints
+    const solutions = Solver.solveLevel(this.levelData);
+    this.solution = solutions.length > 0 ? solutions[0] : null;
 
     this.islandGraphics.clear();
     this.bridgeGraphics.clear();
@@ -503,7 +509,8 @@ export class PlayScene extends Phaser.Scene {
 
   useHint(): void {
     if (this.solved) return;
-    const hint = Solver.findForcedMove(this.grid);
+    if (!this.solution) return;
+    const hint = Solver.findHint(this.grid, this.solution);
     if (!hint) return;
     AudioSystem.hint();
 

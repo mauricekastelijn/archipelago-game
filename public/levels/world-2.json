@@ -159,85 +159,73 @@
     "gridHeight": 7,
     "islands": [
       {
-        "row": 1,
-        "col": 0,
+        "row": 6,
+        "col": 3,
         "faction": 0,
         "degree": 2
       },
       {
-        "row": 1,
-        "col": 4,
-        "faction": 0,
-        "degree": 3
-      },
-      {
-        "row": 3,
-        "col": 4,
-        "faction": 0,
-        "degree": 3
-      },
-      {
-        "row": 5,
-        "col": 4,
+        "row": 6,
+        "col": 1,
         "faction": 0,
         "degree": 1
       },
       {
-        "row": 3,
-        "col": 2,
+        "row": 0,
+        "col": 3,
         "faction": 0,
-        "degree": 3
+        "degree": 1
       },
       {
-        "row": 1,
+        "row": 6,
         "col": 6,
         "faction": 0,
         "degree": 2
       },
       {
-        "row": 1,
-        "col": 2,
-        "faction": 0,
-        "degree": 5
-      },
-      {
-        "row": 3,
+        "row": 0,
         "col": 6,
         "faction": 0,
-        "degree": 1
+        "degree": 2
       },
       {
         "row": 4,
-        "col": 6,
+        "col": 2,
         "faction": 1,
-        "degree": 1
+        "degree": 4
+      },
+      {
+        "row": 0,
+        "col": 2,
+        "faction": 1,
+        "degree": 3
+      },
+      {
+        "row": 0,
+        "col": 0,
+        "faction": 1,
+        "degree": 2
       },
       {
         "row": 4,
         "col": 0,
         "faction": 1,
-        "degree": 1
-      },
-      {
-        "row": 6,
-        "col": 6,
-        "faction": 1,
         "degree": 2
       },
       {
-        "row": 6,
+        "row": 2,
         "col": 0,
         "faction": 1,
         "degree": 2
       },
       {
-        "row": 6,
-        "col": 2,
+        "row": 4,
+        "col": 4,
         "faction": 1,
-        "degree": 2
+        "degree": 1
       }
     ],
-    "parMoves": 14
+    "parMoves": 11
   },
   {
     "id": "2-4",
@@ -247,85 +235,79 @@
     "gridHeight": 7,
     "islands": [
       {
-        "row": 3,
-        "col": 3,
+        "row": 2,
+        "col": 5,
         "faction": 0,
-        "degree": 4
+        "degree": 2
       },
       {
-        "row": 5,
-        "col": 3,
-        "faction": 0,
-        "degree": 5
-      },
-      {
-        "row": 3,
+        "row": 2,
         "col": 1,
         "faction": 0,
         "degree": 1
       },
       {
-        "row": 3,
-        "col": 6,
-        "faction": 0,
-        "degree": 2
-      },
-      {
-        "row": 5,
-        "col": 1,
-        "faction": 0,
-        "degree": 2
-      },
-      {
-        "row": 5,
-        "col": 6,
-        "faction": 0,
-        "degree": 3
-      },
-      {
-        "row": 1,
-        "col": 3,
+        "row": 6,
+        "col": 5,
         "faction": 0,
         "degree": 1
       },
       {
         "row": 2,
+        "col": 3,
+        "faction": 0,
+        "degree": 3
+      },
+      {
+        "row": 4,
+        "col": 3,
+        "faction": 0,
+        "degree": 3
+      },
+      {
+        "row": 4,
+        "col": 5,
+        "faction": 0,
+        "degree": 4
+      },
+      {
+        "row": 0,
+        "col": 5,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 5,
         "col": 2,
         "faction": 1,
-        "degree": 1
+        "degree": 2
       },
       {
         "row": 0,
         "col": 2,
         "faction": 1,
-        "degree": 4
+        "degree": 1
+      },
+      {
+        "row": 5,
+        "col": 0,
+        "faction": 1,
+        "degree": 3
       },
       {
         "row": 0,
         "col": 0,
         "faction": 1,
-        "degree": 1
-      },
-      {
-        "row": 2,
-        "col": 6,
-        "faction": 1,
-        "degree": 1
-      },
-      {
-        "row": 0,
-        "col": 4,
-        "faction": 1,
-        "degree": 3
-      },
-      {
-        "row": 0,
-        "col": 6,
-        "faction": 1,
         "degree": 2
       }
     ],
-    "parMoves": 15
+    "parMoves": 13
   },
   {
     "id": "2-5",
@@ -335,90 +317,84 @@
     "gridHeight": 7,
     "islands": [
       {
-        "row": 6,
+        "row": 3,
         "col": 6,
         "faction": 0,
         "degree": 2
       },
       {
-        "row": 4,
-        "col": 6,
+        "row": 3,
+        "col": 1,
         "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 4,
-        "col": 4,
-        "faction": 0,
-        "degree": 3
-      },
-      {
-        "row": 6,
-        "col": 2,
-        "faction": 0,
-        "degree": 4
-      },
-      {
-        "row": 4,
-        "col": 2,
-        "faction": 0,
-        "degree": 4
-      },
-      {
-        "row": 6,
-        "col": 0,
-        "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 6,
-        "col": 4,
-        "faction": 0,
-        "degree": 4
-      },
-      {
-        "row": 2,
-        "col": 2,
-        "faction": 0,
-        "degree": 1
-      },
-      {
-        "row": 1,
-        "col": 6,
-        "faction": 1,
-        "degree": 3
-      },
-      {
-        "row": 1,
-        "col": 0,
-        "faction": 1,
-        "degree": 3
-      },
-      {
-        "row": 1,
-        "col": 2,
-        "faction": 1,
-        "degree": 3
+        "degree": 2
       },
       {
         "row": 3,
+        "col": 3,
+        "faction": 0,
+        "degree": 4
+      },
+      {
+        "row": 5,
+        "col": 3,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 0,
+        "col": 6,
+        "faction": 0,
+        "degree": 2
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "faction": 0,
+        "degree": 3
+      },
+      {
+        "row": 1,
+        "col": 3,
+        "faction": 0,
+        "degree": 1
+      },
+      {
+        "row": 0,
+        "col": 4,
+        "faction": 0,
+        "degree": 3
+      },
+      {
+        "row": 4,
         "col": 0,
+        "faction": 1,
+        "degree": 1
+      },
+      {
+        "row": 4,
+        "col": 4,
         "faction": 1,
         "degree": 2
       },
       {
-        "row": 1,
-        "col": 4,
-        "faction": 1,
-        "degree": 4
-      },
-      {
-        "row": 3,
+        "row": 4,
         "col": 6,
         "faction": 1,
         "degree": 1
+      },
+      {
+        "row": 6,
+        "col": 4,
+        "faction": 1,
+        "degree": 2
+      },
+      {
+        "row": 6,
+        "col": 0,
+        "faction": 1,
+        "degree": 2
       }
     ],
-    "parMoves": 18
+    "parMoves": 13
   }
 ]
