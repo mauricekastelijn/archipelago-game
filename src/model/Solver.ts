@@ -13,10 +13,71 @@ export interface HintResult {
  */
 export class Solver {
   /**
-   * Find one bridge that must exist in the solution.
-   * Returns undefined if no forced move is found.
+   * Find one bridge that should be changed.
+   * Prefers removing clearly wrong bridges before suggesting new ones.
+   * Returns undefined if no hint is found.
    */
   static findForcedMove(grid: Grid): HintResult | undefined {
+    // Phase 1: find bridges that are clearly wrong and should be removed
+    const wrongBridge = Solver.findWrongBridge(grid);
+    if (wrongBridge) return wrongBridge;
+
+    // Phase 2: find forced additions via constraint propagation
+    return Solver.findForcedAddition(grid);
+  }
+
+  /**
+   * Find a bridge that is definitely wrong:
+   * - Bridge crosses another bridge
+   * - Bridge contributes to an over-connected island
+   */
+  private static findWrongBridge(grid: Grid): HintResult | undefined {
+    for (const bridge of grid.bridges.values()) {
+      if (bridge.count === 0) continue;
+
+      // Check if this bridge crosses another bridge
+      if (grid.wouldCross(bridge.islandA, bridge.islandB)) {
+        return { islandA: bridge.islandA, islandB: bridge.islandB, targetCount: 0 };
+      }
+    }
+
+    // Check for over-connected islands — remove a bridge from the most over-connected
+    for (const island of grid.islands) {
+      const used = grid.getDegreeUsed(island);
+      if (used <= island.degree) continue;
+
+      // Find a bridge to remove: prefer bridges where the neighbor is also over-connected
+      let bestBridge: { islandA: Island; islandB: Island } | null = null;
+      let bestScore = -1;
+
+      for (const bridge of grid.bridges.values()) {
+        if (bridge.count === 0) continue;
+        let neighbor: Island | null = null;
+        if (bridge.islandA === island) neighbor = bridge.islandB;
+        else if (bridge.islandB === island) neighbor = bridge.islandA;
+        if (!neighbor) continue;
+
+        const neighborOver = grid.getDegreeUsed(neighbor) - neighbor.degree;
+        const score = Math.max(0, neighborOver) + 1;
+        if (score > bestScore) {
+          bestScore = score;
+          bestBridge = { islandA: bridge.islandA, islandB: bridge.islandB };
+        }
+      }
+
+      if (bestBridge) {
+        const currentCount = grid.getBridgeCount(bestBridge.islandA, bestBridge.islandB);
+        return { islandA: bestBridge.islandA, islandB: bestBridge.islandB, targetCount: currentCount - 1 };
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Find one bridge that must exist in the solution via constraint propagation.
+   */
+  private static findForcedAddition(grid: Grid): HintResult | undefined {
     for (const island of grid.islands) {
       const neighbors = grid.getNeighbors(island);
       const currentDegree = grid.getDegreeUsed(island);

@@ -89,6 +89,14 @@ export class Grid {
     }
   }
 
+  /** Ensure a bridge entry exists between two islands (created with count 0 if absent). */
+  ensureBridge(islandA: Island, islandB: Island): void {
+    const key = Bridge.makeKey(islandA.row, islandA.col, islandB.row, islandB.col);
+    if (!this.bridges.has(key)) {
+      this.bridges.set(key, new Bridge(islandA, islandB, 0));
+    }
+  }
+
   /** Total bridges attached to an island. */
   getDegreeUsed(island: Island): number {
     let total = 0;

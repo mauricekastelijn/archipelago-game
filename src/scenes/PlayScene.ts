@@ -33,10 +33,8 @@ export class PlayScene extends Phaser.Scene {
   private dragStartIsland: Island | null = null;
   private dragLine: Phaser.GameObjects.Graphics | null = null;
 
-  // Long-press-to-remove state
-  private longPressTimer: Phaser.Time.TimerEvent | null = null;
-  private longPressBridgeKey: string | null = null;
-  private static readonly LONG_PRESS_MS = 400;
+  // Tap-to-remove bridge state
+  private tappedBridgeKey: string | null = null;
 
   private returnScene = 'worldmap';
   private quickPlayLabel = '';
@@ -181,46 +179,41 @@ export class PlayScene extends Phaser.Scene {
       const island = this.findIslandNearPointer(pointer.worldX, pointer.worldY);
       if (island) {
         this.dragStartIsland = island;
-        this.cancelLongPress();
         return;
       }
 
-      // Not an island — check for a bridge under the pointer for long-press removal
+      // Not an island — check for a bridge under the pointer for tap removal
       this.deselectIsland();
       const bridgeKey = this.findBridgeNearPointer(pointer.worldX, pointer.worldY);
       if (bridgeKey) {
-        this.longPressBridgeKey = bridgeKey;
-        this.longPressTimer = this.time.delayedCall(PlayScene.LONG_PRESS_MS, () => {
-          this.removeBridge(bridgeKey);
-          this.longPressBridgeKey = null;
-        });
+        this.tappedBridgeKey = bridgeKey;
       }
     });
 
-    // Pointer move: draw drag line, cancel long-press if pointer drifts
+    // Pointer move: draw drag line, cancel bridge tap if pointer drifts
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (this.dragStartIsland && pointer.isDown) {
         this.drawDragLine(this.dragStartIsland, pointer.worldX, pointer.worldY);
       }
 
-      // Cancel long-press if pointer moves more than a small threshold
-      if (this.longPressBridgeKey && pointer.isDown) {
+      // Cancel bridge tap if pointer moves more than a small threshold
+      if (this.tappedBridgeKey && pointer.isDown) {
         const dist = Phaser.Math.Distance.Between(
           pointer.downX, pointer.downY, pointer.worldX, pointer.worldY
         );
         if (dist > 10) {
-          this.cancelLongPress();
+          this.tappedBridgeKey = null;
         }
       }
     });
 
     // Pointer up: finish drag or handle tap
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      this.cancelLongPress();
       this.clearDragLine();
 
       if (this.solved) {
         this.dragStartIsland = null;
+        this.tappedBridgeKey = null;
         return;
       }
 
@@ -234,6 +227,7 @@ export class PlayScene extends Phaser.Scene {
         }
         this.deselectIsland();
         this.dragStartIsland = null;
+        this.tappedBridgeKey = null;
         return;
       }
 
@@ -242,7 +236,13 @@ export class PlayScene extends Phaser.Scene {
         this.onIslandTapped(this.dragStartIsland);
       }
 
+      // Tap on a bridge — remove it
+      if (!this.dragStartIsland && this.tappedBridgeKey) {
+        this.removeBridge(this.tappedBridgeKey);
+      }
+
       this.dragStartIsland = null;
+      this.tappedBridgeKey = null;
     });
 
     // Keyboard
@@ -313,14 +313,6 @@ export class PlayScene extends Phaser.Scene {
     // Visual feedback: flash the islands
     this.flashIsland(bridge.islandA);
     this.flashIsland(bridge.islandB);
-  }
-
-  private cancelLongPress(): void {
-    if (this.longPressTimer) {
-      this.longPressTimer.destroy();
-      this.longPressTimer = null;
-    }
-    this.longPressBridgeKey = null;
   }
 
   private drawDragLine(from: Island, toX: number, toY: number): void {
@@ -520,12 +512,11 @@ export class PlayScene extends Phaser.Scene {
       hint.islandB.row, hint.islandB.col
     );
     const previousCount = this.grid.getBridgeCount(hint.islandA, hint.islandB);
-    if (previousCount >= hint.targetCount) return;
+    if (previousCount === hint.targetCount) return;
 
-    // Cycle to target
-    while (this.grid.getBridgeCount(hint.islandA, hint.islandB) < hint.targetCount) {
-      this.grid.cycleBridge(hint.islandA, hint.islandB);
-    }
+    // Set bridge to target count (ensure bridge entry exists first)
+    this.grid.ensureBridge(hint.islandA, hint.islandB);
+    this.grid.setBridgeCount(key, hint.targetCount);
     this.history.push({ bridgeKey: key, previousCount, newCount: hint.targetCount });
 
     this.drawBridge(key);
@@ -767,8 +758,8 @@ export class PlayScene extends Phaser.Scene {
 
   private handleShutdown(): void {
     AudioSystem.stopMusic();
-    this.cancelLongPress();
     this.clearDragLine();
+    this.tappedBridgeKey = null;
     this.islandGraphics.clear();
     this.bridgeGraphics.clear();
     this.neighborHighlights = [];
