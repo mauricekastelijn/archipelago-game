@@ -35,8 +35,9 @@ export class PlayScene extends Phaser.Scene {
   private dragStartIsland: Island | null = null;
   private dragLine: Phaser.GameObjects.Graphics | null = null;
 
-  // Tap-to-remove bridge state
-  private tappedBridgeKey: string | null = null;
+  // Long-press-to-remove bridge state
+  private longPressTimer?: Phaser.Time.TimerEvent;
+  private longPressBridgeKey: string | null = null;
 
   private returnScene = 'worldmap';
   private quickPlayLabel = '';
@@ -165,12 +166,12 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private findIslandNearPointer(px: number, py: number): Island | null {
-    const radius = this.cellSize * ISLAND_RADIUS_RATIO;
+    const hitRadius = this.cellSize * ISLAND_RADIUS_RATIO * 1.5;
     for (const island of this.grid.islands) {
       const pos = this.cellToPixel(island.row, island.col);
       const dx = px - pos.x;
       const dy = py - pos.y;
-      if (dx * dx + dy * dy <= radius * radius) {
+      if (dx * dx + dy * dy <= hitRadius * hitRadius) {
         return island;
       }
     }
@@ -178,7 +179,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private setupInput(): void {
-    // Pointer down: start drag on island, or start long-press on bridge
+    // Pointer down: start drag on island, or start long-press timer on bridge
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.solved) return;
 
@@ -188,27 +189,33 @@ export class PlayScene extends Phaser.Scene {
         return;
       }
 
-      // Not an island — check for a bridge under the pointer for tap removal
+      // Not an island — check for a bridge under the pointer for long-press removal
       this.deselectIsland();
       const bridgeKey = this.findBridgeNearPointer(pointer.worldX, pointer.worldY);
       if (bridgeKey) {
-        this.tappedBridgeKey = bridgeKey;
+        this.longPressBridgeKey = bridgeKey;
+        this.longPressTimer = this.time.delayedCall(400, () => {
+          if (this.longPressBridgeKey) {
+            this.removeBridge(this.longPressBridgeKey);
+            this.longPressBridgeKey = null;
+          }
+        });
       }
     });
 
-    // Pointer move: draw drag line, cancel bridge tap if pointer drifts
+    // Pointer move: draw drag line, cancel long-press if pointer drifts
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (this.dragStartIsland && pointer.isDown) {
         this.drawDragLine(this.dragStartIsland, pointer.worldX, pointer.worldY);
       }
 
-      // Cancel bridge tap if pointer moves more than a small threshold
-      if (this.tappedBridgeKey && pointer.isDown) {
+      // Cancel long-press if pointer moves more than a small threshold
+      if (this.longPressBridgeKey && pointer.isDown) {
         const dist = Phaser.Math.Distance.Between(
           pointer.downX, pointer.downY, pointer.worldX, pointer.worldY
         );
         if (dist > 10) {
-          this.tappedBridgeKey = null;
+          this.cancelLongPress();
         }
       }
     });
@@ -216,10 +223,10 @@ export class PlayScene extends Phaser.Scene {
     // Pointer up: finish drag or handle tap
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       this.clearDragLine();
+      this.cancelLongPress();
 
       if (this.solved) {
         this.dragStartIsland = null;
-        this.tappedBridgeKey = null;
         return;
       }
 
@@ -233,7 +240,6 @@ export class PlayScene extends Phaser.Scene {
         }
         this.deselectIsland();
         this.dragStartIsland = null;
-        this.tappedBridgeKey = null;
         return;
       }
 
@@ -242,13 +248,7 @@ export class PlayScene extends Phaser.Scene {
         this.onIslandTapped(this.dragStartIsland);
       }
 
-      // Tap on a bridge — remove it
-      if (!this.dragStartIsland && this.tappedBridgeKey) {
-        this.removeBridge(this.tappedBridgeKey);
-      }
-
       this.dragStartIsland = null;
-      this.tappedBridgeKey = null;
     });
 
     // Keyboard
@@ -301,14 +301,23 @@ export class PlayScene extends Phaser.Scene {
     return Phaser.Math.Distance.Between(px, py, ax + t * dx, ay + t * dy);
   }
 
-  /** Remove a bridge entirely (long-press action). */
+  private cancelLongPress(): void {
+    if (this.longPressTimer) {
+      this.longPressTimer.destroy();
+      this.longPressTimer = undefined;
+    }
+    this.longPressBridgeKey = null;
+  }
+
+  /** Remove one bridge level (long-press action). */
   private removeBridge(bridgeKey: string): void {
     const bridge = this.grid.bridges.get(bridgeKey);
     if (!bridge || bridge.count === 0) return;
 
     const previousCount = bridge.count;
-    this.grid.setBridgeCount(bridgeKey, 0);
-    this.history.push({ bridgeKey, previousCount, newCount: 0 });
+    const newCount = previousCount - 1;
+    this.grid.setBridgeCount(bridgeKey, newCount);
+    this.history.push({ bridgeKey, previousCount, newCount });
     AudioSystem.bridgeRemove();
 
     this.drawBridge(bridgeKey);
@@ -668,11 +677,7 @@ export class PlayScene extends Phaser.Scene {
       const circle = container.getAt(0) as Phaser.GameObjects.Arc;
       const origColor = (FACTION_STYLES[island.faction] ?? FACTION_STYLES[0]).color;
 
-      // Flash golden then revert
-      this.time.delayedCall(delay, () => {
-        circle.setFillStyle(0xfbbf24, 1);
-      });
-
+      // Flash golden then fade back to faction color
       this.tweens.add({
         targets: container,
         scaleX: 1.35,
@@ -681,18 +686,24 @@ export class PlayScene extends Phaser.Scene {
         delay,
         ease: 'Back.Out',
         yoyo: true,
+        onStart: () => {
+          circle.setFillStyle(0xfbbf24, 1);
+        },
         onComplete: () => {
           container.setScale(1);
-          // Fade back to faction color after golden flash
-          this.tweens.add({
-            targets: circle,
-            fillColor: origColor,
+          const goldR = 0xfb, goldG = 0xbf, goldB = 0x24;
+          const targetR = (origColor >> 16) & 0xff;
+          const targetG = (origColor >> 8) & 0xff;
+          const targetB = origColor & 0xff;
+          this.tweens.addCounter({
+            from: 0,
+            to: 100,
             duration: 400,
             onUpdate: (tween) => {
-              const t = tween.progress;
-              const r = Math.round(0xfb + t * (((origColor >> 16) & 0xff) - 0xfb));
-              const g = Math.round(0xbf + t * (((origColor >> 8) & 0xff) - 0xbf));
-              const b = Math.round(0x24 + t * ((origColor & 0xff) - 0x24));
+              const t = tween.getValue()! / 100;
+              const r = Math.round(goldR + t * (targetR - goldR));
+              const g = Math.round(goldG + t * (targetG - goldG));
+              const b = Math.round(goldB + t * (targetB - goldB));
               circle.setFillStyle((r << 16) | (g << 8) | b, 0.7);
             }
           });
@@ -766,7 +777,7 @@ export class PlayScene extends Phaser.Scene {
   private handleShutdown(): void {
     AudioSystem.stopMusic();
     this.clearDragLine();
-    this.tappedBridgeKey = null;
+    this.cancelLongPress();
     this.islandGraphics.clear();
     this.bridgeGraphics.clear();
     this.neighborHighlights = [];
