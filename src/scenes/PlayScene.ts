@@ -27,6 +27,7 @@ export class PlayScene extends Phaser.Scene {
   private islandGraphics: Map<string, Phaser.GameObjects.Container> = new Map();
   private bridgeGraphics: Map<string, Phaser.GameObjects.Graphics> = new Map();
   private neighborHighlights: Phaser.GameObjects.Arc[] = [];
+  private selectionRing: Phaser.GameObjects.Arc | null = null;
   private solved = false;
   private completedFactions: Set<number> = new Set();
   private solution: Solution | null = null;
@@ -378,7 +379,27 @@ export class PlayScene extends Phaser.Scene {
     this.selectedIsland = island;
     AudioSystem.selectIsland();
 
-    // Glow effect on selected island
+    const { x, y } = this.cellToPixel(island.row, island.col);
+    const radius = this.cellSize * ISLAND_RADIUS_RATIO;
+    const style = FACTION_STYLES[island.faction] ?? FACTION_STYLES[0];
+
+    // Bright pulsing selection ring
+    this.selectionRing = this.add.circle(x, y, radius + 6);
+    this.selectionRing.setStrokeStyle(3, style.color, 1);
+    this.selectionRing.setFillStyle(style.color, 0);
+    this.selectionRing.setDepth(9);
+    this.tweens.add({
+      targets: this.selectionRing,
+      scaleX: 1.15,
+      scaleY: 1.15,
+      alpha: { from: 1, to: 0.5 },
+      duration: 600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut'
+    });
+
+    // Scale up selected island
     const container = this.islandGraphics.get(island.key);
     if (container) {
       this.tweens.add({
@@ -393,8 +414,8 @@ export class PlayScene extends Phaser.Scene {
     // Highlight neighbors
     const neighbors = this.grid.getNeighbors(island);
     for (const neighbor of neighbors) {
-      const { x, y } = this.cellToPixel(neighbor.row, neighbor.col);
-      const highlight = this.add.circle(x, y, this.cellSize * ISLAND_RADIUS_RATIO + 6, 0xffffff, 0.15);
+      const pos = this.cellToPixel(neighbor.row, neighbor.col);
+      const highlight = this.add.circle(pos.x, pos.y, radius + 6, 0xffffff, 0.15);
       highlight.setDepth(5);
       this.neighborHighlights.push(highlight);
     }
@@ -414,6 +435,11 @@ export class PlayScene extends Phaser.Scene {
       }
     }
     this.selectedIsland = null;
+    if (this.selectionRing) {
+      this.tweens.killTweensOf(this.selectionRing);
+      this.selectionRing.destroy();
+      this.selectionRing = null;
+    }
     for (const h of this.neighborHighlights) {
       h.destroy();
     }
