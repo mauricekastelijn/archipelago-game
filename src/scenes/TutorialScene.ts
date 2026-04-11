@@ -57,7 +57,7 @@ const PAGES: TutPage[] = [
   // Page 2 — Building a bridge
   {
     title: 'Building Bridges',
-    body: 'Tap an island, then tap\na neighbor to build a bridge.\nOr drag between them.',
+    body: 'Tap an island to select it \u2014\na glowing ring appears.\nThen tap a neighbor to connect.\nOr drag between them.',
     gridW: 4, gridH: 3,
     islands: [
       { row: 1, col: 0, faction: 0, degree: 1, satisfied: true },
@@ -85,7 +85,7 @@ const PAGES: TutPage[] = [
   // Page 4 — Removing bridges
   {
     title: 'Removing Bridges',
-    body: 'Tap a bridge to remove it.\n\nOr connect the same pair\na third time to cycle back to 0.',
+    body: 'Press and hold a bridge\nto remove it (one at a time).\n\nOr connect the same pair\na third time to cycle back to 0.',
     gridW: 4, gridH: 3,
     islands: [
       { row: 1, col: 0, faction: 0, degree: 2 },
@@ -179,7 +179,7 @@ const PAGES: TutPage[] = [
   // Page 10 — Ready to play
   {
     title: 'Ready to Play!',
-    body: 'Start with World 1 for an\neasy introduction, or try\nQuick Play for a random puzzle.\n\nGood luck!',
+    body: 'Every puzzle has exactly one\nsolution. Start with World 1\nfor an easy introduction, or try\nQuick Play for a random puzzle.\n\nGood luck!',
     gridW: 0, gridH: 0,
     islands: [],
     bridges: []
